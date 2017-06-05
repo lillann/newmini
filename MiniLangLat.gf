@@ -1,0 +1,1 @@
+concrete MiniLangLat of MiniLang = MiniGrammarLat, MiniLexiconLat ;
