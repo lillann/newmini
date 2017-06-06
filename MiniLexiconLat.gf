@@ -1,4 +1,4 @@
-concrete MiniLexiconLat of MiniLexicon = MiniGrammarLat ** open MiniResLat in {
+concrete MiniLexiconLat of MiniLexicon = ExtMiniGrammarLat ** open MiniResLat in {
 
 lin animal_N   = mkNoun "bestia" First Fem;
 lin apple_N    = mkNoun "pomum" Second Neut;
@@ -101,6 +101,7 @@ lin break_V2 = mkV2 "frangere" Third;
 lin understand_V2 = mkV2 "comprehendere"  Third;
 lin wait_V2 = mkV2 "expectare" ;
 
+-- lin alas_Interj = mkInterj "eheu";
 
 
 }

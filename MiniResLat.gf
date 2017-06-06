@@ -35,6 +35,8 @@ oper
 	
   Adverb : Type = {s : Str} ;
 	
+	Interjection : Type = {s : Str};
+	
   GVerb : Type = {
      s : VForm => Str ;
      isAux : Bool

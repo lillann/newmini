@@ -1,32 +1,35 @@
-concrete MiniGrammarLat of MiniGrammar = open MiniResLat, Prelude in {
+concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude in {
 
 
- lincat
+  lincat
   
- N   = Noun ;
- PN  = ProperName ;
- A   = Adjective ;
- V   = Verb;
- V2  = Verb2;
- Adv = Adverb ;
- Interj = Interjection;
- 
+     N   = Noun ;
+     PN  = ProperName ;
+		 A   = Adjective ;
+		 V   = Verb;
+		 V2  = Verb2;
+		 Adv = Adverb ;
+		 Interj = Interjection ; 
 		 
- CN  = Noun ;  --  : {s : Number => Case => Str; g : Gender};
+		 CN  = Noun ;  --  : {s : Number => Case => Str; g : Gender};
 		 
 		 AP  = Adjective; -- : Gender => Number => Case => Str
  		 NP  = {s : Case =>  Str; a : Agreement; typ : NPType} ;
 		 
- Prep = Preposition;		 
- VP  = {v : GVerb; obj : Agreement => Str; compl : Str};		 		 
- Det  = {s : Gender => Case => Str; n : Number};
- Cl   = {s : Bool => Str};
- Pron = {s : Case => Str ; a : Agreement} ;		
- Pol = {s : Str ; b : Bool} ;
+		 Prep = Preposition;
+		 
+		 VP  = {v : GVerb; obj : Agreement => Str; compl : Str};
+		 		 
+		 Det  = {s : Gender => Case => Str; n : Number};
+		 Cl   = {s : Bool => Str};
+		 Pron = {s : Case => Str ; a : Agreement} ;
+		
+		 Pol = {s : Str ; b : Bool} ;
 			 		 
 	lin
     UttS s = s ;
     UttNP np = {s = np.s ! Ack} ;
+	--	UttInterj i = i ;  
 		
     UsePresCl pol cl = {
       s = pol.s ++ cl.s ! pol.b
