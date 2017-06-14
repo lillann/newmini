@@ -60,8 +60,8 @@ abstract MiniGrammar = {
 -- Adverb
 --     PrepNP    : Prep -> NP -> Adv ;     -- in the house
     WithPrepNP : NP -> Adv ;
-		InPrepNP  : NP -> Adv ;             -- in Paris
-	--	OnPrepNP  : NP -> Adv ;             
+    InPrepNP  : NP -> Adv ;             -- in Paris
+  --  OnPrepNP  : NP -> Adv ;             
 
 -- Conjunction
     CoordS    : Conj -> S -> S -> S ;   -- he walks and she runs ---s
@@ -75,12 +75,12 @@ abstract MiniGrammar = {
     or_Conj   : Conj ;
     
     every_Det : Det ;
-		all_Det   : Det ; 
+    all_Det   : Det ; 
 
-  --  in_Prep   : Prep ;
-  --  on_Prep   : Prep ;
-  --  with_Prep : Prep ;
-	--	to_Prep   : Prep ; 
+   in_Prep   : Prep ;
+   on_Prep   : Prep ;
+   with_Prep : Prep ;
+  to_Prep   : Prep ; 
 
     i_Pron     : Pron ;
     youSg_Pron : Pron ;

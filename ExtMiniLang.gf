@@ -5,5 +5,6 @@ fun
     know_VS     : VS ;
     say_VS      : VS ;
     alas_Interj : Interj ;
+    very_Ada    : AdA;
 
 }

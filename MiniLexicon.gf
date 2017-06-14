@@ -69,7 +69,7 @@ fun
   sea_N : N ;
   see_V2 : V2 ;
   ship_N : N ;
-	old_man_N : N ;
+  old_man_N : N ;
   sleep_V : V ;
   small_A : A ;
   star_N : N ;

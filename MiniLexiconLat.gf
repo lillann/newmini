@@ -1,4 +1,4 @@
-concrete MiniLexiconLat of MiniLexicon = ExtMiniGrammarLat ** open MiniResLat in {
+concrete MiniLexiconLat of ExtMiniLang = ExtMiniGrammarLat ** open MiniResLat in {
 
 lin animal_N   = mkNoun "bestia" First Fem;
 lin apple_N    = mkNoun "pomum" Second Neut;
@@ -69,39 +69,47 @@ lin green_A    = mkA "viridis" "viride" Third ;
 lin heavy_A    = mkA "gravis" "grave" Third ;
 
 -- VERBS
-lin jump_V = mkV "salire";
-lin come_V = mkV "venire";
-lin play_V = mkV "ludere" Third;
-lin run_V  = mkV "currere" Third;
-lin go_V   = mkV "eo" "is" "it" "imus" "itis" "eunt" "ire"; 
+lin jump_V = mkV "salire" "salu" Fourth;
+lin come_V = mkV "venire" "ven" Fourth;
+lin play_V = mkV "ludere" "lus" Third;
+lin run_V  = mkV "currere" "cucurr" Third;
+lin go_V   = mkV "eo" "is" "it" "imus" "itis" "eunt" "ire" ; 
 lin walk_V = mkV "ambulare" ;
-lin live_V = mkV "vivere" Third ;
+lin live_V = mkV "vivere" "vix" Third ;
 lin sleep_V = mkV "dormire" ;
-lin swim_V = mkV "natare" ;
+lin swim_V  = mkV "natare" ;
 lin travel_V = mkV "viare" ;
 lin drink_V2 = mkV2 "bibere" Third ;
 
+lin say_VS  =  mkVS "dicere" "dix" "quod" Third ; 
+
+lin know_VS = mkVS "scire" "quod"; 
+
 lin already_Adv = mkAdv "iam" ;
 lin now_Adv = mkAdv "nunc" ;
+lin very_Ada = mkAda "multum";
 
 lin love_V2 = mkV2 "amare";
 lin buy_V2   = mkV2 "emere" Third;
 
 lin eat_V2 = mkV2 "manducare" ;
-lin find_V2 = mkV2 "invenire" ;
-
+lin find_V2 = mkV2 "invenire" "inven" Fourth;
+lin see_V2 = mkV2 "videre" "vid" Second;
 
 lin kill_V2 = mkV2 "necare" ;
 lin read_V2 = mkV2 "legere" Third;
-lin see_V2 = mkV2 "videre" ;
+
 
 lin teach_V2 = mkV2 "docere" ;
-lin break_V2 = mkV2 "frangere" Third;
+lin break_V2 = mkV2 "frangere" "freg" Third;
 
 lin understand_V2 = mkV2 "comprehendere"  Third;
 lin wait_V2 = mkV2 "expectare" ;
 
--- lin alas_Interj = mkInterj "eheu";
+
+lin alas_Interj = mkInterj "eheu";
+
+
 
 
 }

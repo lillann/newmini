@@ -15,8 +15,8 @@ abstract ExtMiniGrammar = MiniGrammar
     AdA ;    -- adjective-modifying adverb          e.g. "very"
     
     IAdv ;   -- interrogative adverb                e.g. "why"
-    Temp ;   -- temporal and aspectual features     e.g. past anterior
-    Tense ;  -- tense                               e.g. present, past, future
+    Temp ;   -- temporal and aspectual features     e.g. past anterior 
+    Tense ;  -- tense                               e.g. present, past, future 
 --+    Pol ;    -- polarity                            e.g. positive, negative
     Ant ;    -- anteriority                         e.g. simultaneous, anterior
 
