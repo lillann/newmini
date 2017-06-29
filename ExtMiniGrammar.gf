@@ -113,6 +113,9 @@ abstract ExtMiniGrammar = MiniGrammar
     UttCN     : CN   -> Utt ;               -- house
     UttAP     : AP   -> Utt ;               -- fine
     UttInterj : Interj -> Utt ;             -- alas
+    CNInterjSg  : CN -> Interj ;              -- slave!
+    CNInterjPl : CN -> Interj;              -- slaves!
+    
 
 -- Conjunction
   cat
@@ -147,7 +150,7 @@ abstract ExtMiniGrammar = MiniGrammar
     who_IP       : IP ;
     this_Quant   : Quant ;
     when_IAdv    : IAdv ;
-    why_IAdv     : IAdv ;
+    why_IAdv     : IAdv ; -- subordinate question ("the disciple asked why paulus didn't come to Rome") --> Conjunctive  
     want_VV      : VV ;
     can_VV       : VV ;
  

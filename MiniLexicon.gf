@@ -88,5 +88,6 @@ fun
   woman_N : N ;
   yellow_A : A ;
   young_A : A ;
+  be_V : V;
 
 }

@@ -73,7 +73,7 @@ lin jump_V = mkV "salire" "salu" Fourth;
 lin come_V = mkV "venire" "ven" Fourth;
 lin play_V = mkV "ludere" "lus" Third;
 lin run_V  = mkV "currere" "cucurr" Third;
-lin go_V   = mkV "eo" "is" "it" "imus" "itis" "eunt" "ire" ; 
+lin go_V   = mkV "vadere" "vad" Third;
 lin walk_V = mkV "ambulare" ;
 lin live_V = mkV "vivere" "vix" Third ;
 lin sleep_V = mkV "dormire" ;
@@ -87,7 +87,7 @@ lin know_VS = mkVS "scire" "quod";
 
 lin already_Adv = mkAdv "iam" ;
 lin now_Adv = mkAdv "nunc" ;
-lin very_Ada = mkAda "multum";
+lin very_AdA = mkAdjA "multum";
 
 lin love_V2 = mkV2 "amare";
 lin buy_V2   = mkV2 "emere" Third;
@@ -108,6 +108,13 @@ lin wait_V2 = mkV2 "expectare" ;
 
 
 lin alas_Interj = mkInterj "eheu";
+
+lin if_Subj = mkSubj "si" Ind;
+lin because_Subj = mkSubj "quod" Ind;
+
+lin why_IAdv = mkIAdv "quare";
+
+-- lin be_V = mkVBe;
 
 
 

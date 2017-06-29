@@ -15,18 +15,33 @@ param
   
   NPType = NPPN PNType | NPPron | NPNoun ; 
   
-  VForm = VInf | Vf Number Person  Temp ;  -- Add Past, Future
+  VForm = VInf | Vf Number Person Tempus Mood ;  
+  Tempus = Pres | Imperf  | Perf | PluPerf ; 
   
-  Temp = Pres | Imperf  | Perf | PluPerf ; 
-  
-  Ten = TPres | TPast;
-    
+  Tense = TPr | TPa;    
   Ante  = Sim | Anter ; 
+  Mood = Ind | Conj ; 
+  
+  NPStress     = NounFirst | AdjFirst ; 
+  VPStress     = ObjFirst | VerbFirst ;
+  
+  
+  
+  -- NPStress ;
+  
+  -- VerbFirst | ObjFirst IndirObjFirst;
+  
 
-
-  Agreement = Agr Gender Number Person;
+  ClauseStress = NPFirst | VPFirst ;
+  
+  -- NPStress VPStress | VPFirst NPStress VPStress;
+  
+  
+  Agreement = Agr Gender Number Person ;
  
 oper
+
+  Subj : Type = {s : Str; m : Mood};
 
   Noun : Type = {s : Number => Case => Str; g : Gender};
   
@@ -34,36 +49,40 @@ oper
   
   Adjective : Type = {s : Gender => Number => Case => Str};
   
-  Verb : Type = {inf : Str; s :  Temp => Number => Person => Str};
+  Verb : Type = {inf : Str; stem : Str; decl : Declension; s :  Mood => Tempus => Number => Person => Str}; --{s:Str;firsttok: Str}};
   
   Verb2 : Type = Verb ** {c : Str} ;
   
   SComplVerb : Type = Verb ** {conj : Str};
   
   Adverb : Type = {s : Str} ;
+  AdjA : Type = {s : Str};
+  IAdv : Type = {s : Str};
   
   Interjection : Type = {s : Str};
+  
+
     
   GVerb : Type = {
-    s : VForm => Str ;
+    s   : VForm => Str ;
+    imp : Number => Str ;
     cas : Case;
     isAux : Bool
    } ;
 
-  be_GVerb : GVerb = {
-      s = table {
-        VInf       => "esse" ;
-        Vf n p t  => ((mkV "sum" "es" "est" "sumus" "estis" "sunt" "esse").s)!t!n!p
-        } ;
-      cas = Nom;
-      isAux = True
-      } ;
-      
+
+
+
+be_GVerb : GVerb = verb2gverb mkVBe;
+
   verb2gverb : Verb -> GVerb = \v -> {s =
     table {
       VInf       => v.inf;
-      Vf n p t => v.s ! t  ! n ! p  
+      Vf n p t m => (v.s ! m ! t  ! n ! p) 
       } ;
+    imp   = let imps = imperativeEndings v.inf v.decl in                
+               table {Sg   => v.stem ++ BIND ++ imps.s;
+                      Pl   => v.stem ++ BIND ++ imps.pl};
     cas   = Ack;
     isAux = False
     } ;
@@ -71,48 +90,62 @@ oper
     
   StemInfo : Type = {stem : Str; extraLetters : Number -> Case -> Str; changeSuffix : Number -> Case  -> Str -> Str};
   
+  VerbInfo : Type = {stem : Tempus => Str; mid : Str; d : Declension};
+  
   Funtype  : Type = Number -> Case -> Str;
   ProperName : Type = {s : Case => Str; g : Gender; typ : PNType} ;
   
-  agrV : GVerb -> Agreement ->  Temp -> Str = \v,a,t -> case a of {
-    Agr _ n p  => v.s ! Vf n p t 
+  agrV : GVerb -> Agreement ->  Mood -> Tempus -> Str = \v,a,m,t -> case a of {
+    Agr _ n p  => v.s ! Vf n p t m
     } ;
-  
+    
+ 
   mkInterj : Str -> Interjection = \i -> {s = i};
+  mkAdv : Str -> Adverb = \s -> {s = s} ;  
+ -- mkAdA : Str -> Adverb = \s -> {s = s};  
+  mkSubj : Str -> Mood -> Subj = \i,mood -> {s = i; m = mood};
+  
+  mkAdjA : Str -> AdjA = \s -> {s = s};
+  
+  mkIAdv : Str -> IAdv = \s -> {s = s};
   
   
+  mkVBe : Verb = 
+    let vinfo = getVerbInfoBe ;
+        v     = mkVerb "esse" vinfo in
+    {
+    s = \\mood,temp,num,pers => 
+            let conjendings = (pickEndings Conj Pres) ! num ! pers ;
+                normal      = v.s ! mood ! temp ! num ! pers in
+            case <temp,mood> of {            
+                    <Pres,Ind> => case <pers,num> of {
+                                    <Per1,Sg> => "sum";
+                                    <Per2,Sg> => "es";
+                                    <Per1,Pl> => "sumus";
+                                    <Per3,Pl> => "sunt";
+                                    _         => normal};
+                     <Pres,Conj> => "si" + conjendings;
+                     <Imperf,Ind>  => vinfo.stem!temp + "a" +  conjendings;
+                     <Imperf,Conj> => "esse" + conjendings;                     
+                    _ => normal};
+    inf  = "esse";
+    stem = v.stem;
+    decl = v.decl    
+    };
+    
+
   
   mkV = overload 
-   { mkV : Str -> Verb = regVerb;
-                   mkV : Str -> Str -> Verb = \inf,ps -> case getVerbInfo inf of {
-                                                         <st,mid,_,decl> => mkRegVerb inf st mid ps decl};
-                   
-                                                            
-                   mkV : Str -> Declension -> Verb = \inf,decl -> case getVerbInfo inf decl of {
-                                                           <st,mid,ps,_> => mkRegVerb inf st mid ps decl};
-                   mkV : Str -> Str -> Declension -> Verb = \inf,ps,decl -> case getVerbInfo inf decl of {
-                                                         <st,mid,_,_> => mkRegVerb inf st mid ps decl};
-          --         mkV : Str -> Declension -> Verb = \s,d -> 
-          --                      case <d,s> of {
-                                             --  <Third,mitt+ "ere">  => mkRegVerb s mitt "i" Third;
-          --                                     <Third,aud + "ire">  => mkRegVerb s aud "i" (aud + "iv") Fourth};
-                   mkV : (_,_,_,_,_,_,_ : Str) -> Verb =  
-                     \sum,es,est,sumus,estis,sunt,esse -> {
-    s = table {tmp => table {Sg => table {Per1 => sum; 
-                                            Per2 => es; 
-                                            Per3 => est };
-                               Pl => table {Per1 => sumus; 
-                                            Per2 => estis; 
-                                            Per3 => sunt} }};
-    inf = esse  
-    } 
- }; 
-                
-  mkAdv : Str -> Adverb = \s -> {s = s} ;
-  
-  mkAda : Str -> Adverb = \s -> {s = s};
-                
-                                                        
+   { mkV : Str -> Verb = \s -> 
+       let vinfo = getVerbInfo s in mkVerb s vinfo;
+     mkV : Str -> Declension -> Verb = \s,decl -> let vinfo = getVerbInfo s in
+        mkVerb s vinfo**{d=decl};
+     mkV : Str -> Str -> Declension -> Verb = \inf,pstem,decl -> let vinfo = getVerbInfo inf pstem decl in
+        mkVerb inf vinfo**{d=decl}};
+        
+     
+        
+                                                                    
   mkV2 = overload {
     mkV2 : Str -> Declension -> Verb2 = \s,d -> mkV s d ** {c = []};
     mkV2 : Str -> Str -> Declension -> Verb2 = \s,p,d ->  mkV s p d ** {c = []} ;
@@ -123,92 +156,126 @@ oper
     mkVS : Str -> Str -> SComplVerb = \s,c -> ((mkV s) ** {conj = c});
     mkVS : Str -> Str -> Str -> Declension -> SComplVerb =  \s,ps,c,decl -> ((mkV s ps decl) ** {conj = c})}; 
   
-  
-  
   getVerbInfo = overload {
-  getVerbInfo : Str -> {p1:Str;p2:Str;p3:Str;p4:Declension} = \s -> case s of {
-                                voc + "are"  => <voc,"a",voc + "av",First>;
-                                terr + "ere" => <terr,"e",terr + "u",Second>;
-                                aud + "ire"  => <aud,"i",aud + "iv",Fourth>
-                                };
-  getVerbInfo : Str -> Declension -> {p1:Str;p2:Str;p3:Str;p4:Declension} = 
-      \s,d -> case <s,d> of {
-                           --   <vid + e + "re",_> => <vid,e,vid,d>}
-                              
-                              <em  + "ere",Third>   =>  <em,"i", em,Third>; -- TODO   ems -> emis, men emo, ej emio
-                              <ven + "ire", Fourth> =>  <ven,"i", ven,Fourth>;
-                              <vid + "ere", Second> => <vid,"e",vid,Second>} -- venio ok
+  getVerbInfo : Str -> Str -> Declension -> VerbInfo = getVerbInfo3;
+  getVerbInfo : Str -> VerbInfo = getVerbInfo1;
   };
   
-  regVerb : Str -> Verb = \s -> 
-    case getVerbInfo s of {
-      <st,mid,perfst,decl> => 
-      mkRegVerb s st mid (perfst) decl}; 
+  getVerbInfoBe : VerbInfo = 
+     {stem = \\t => case t of {Pres => "e"; Imperf => "er";_ => "fu"};
+      mid  = "s";
+      d    = First};
   
+  getVerbInfo3 : Str -> Str -> Declension -> VerbInfo = \s,pst,decl -> 
+     let cstem = cutStem s decl in
+         {stem = \\t => case t of {Perf | PluPerf => pst; _ => cstem.stem};
+          mid = cstem.mid;
+          d   = decl};
+                                                   
+  getVerbInfo1 : Str -> VerbInfo = \s -> 
+    let cstem = cutStem s in
+       {stem = \\t => case t of { Pres | Imperf => cstem.stem;
+                                  _             => cstem.stem + cstem.perfmid};
+        mid = cstem.mid;
+        d   =  cstem.d};
 
+  cutStem = overload {
+    cutStem : Str -> Declension -> {stem:Str;mid:Str;d : Declension} = cutStem2;
+    cutStem : Str -> {stem:Str;mid:Str;perfmid : Str;d : Declension} = cutStem1};
+  
+  cutStem2 : Str -> Declension -> {stem:Str;mid:Str;d : Declension} = \s,decl ->   
+    case s of {
+      lud + "ere" => 
+         case decl of 
+           {Third => {stem=lud;mid="i";perfmid=""; d = Third}; 
+            _     => cutStem1 s};
+      ven + "ire" => case decl of 
+           {Third => {stem=ven;mid="i";perfmid=""; d = Third};
+            _     => cutStem1 s}};
     
+  cutStem1 : Str -> {stem:Str;mid:Str;perfmid : Str;d : Declension} = \s ->
+    case s of {
+      aud  + "ire"  =>  {stem=aud;mid="i";   perfmid = "iv";d = Fourth};
+      terr + "ere"  =>  {stem=terr;mid="e"; perfmid = "u" ;d = Second};
+      voc  + "are"  =>  {stem=voc;mid="a";  perfmid = "av";d = First}};
+      
+      
+ 
+      
     
-  mkRegVerb : Str -> Str -> Str -> Str -> Declension -> Verb = \inf,stem,mid,perfstem,decl -> {
-    inf = inf;
-    s = let 
-         
-        presendings = 
-           table {Sg => table {Per1 => "o"; 
+  imperativeEndings : Str -> Declension -> {s : Str;pl : Str} = \st,decl ->
+    case decl of {
+      First  => {s = "a"; pl = "ate"};
+      Second => {s = "e"; pl = "ete"}; 
+      Third  => {s = "e"; pl = "ite"};
+      Fourth => {s = "i"; pl = "ite"}};
+  -- irregular: dic/duc/fac/fer    
+   
+  presendings : Mood -> Number => Person => Str = \mood -> 
+           table {Sg => table {Per1 => case mood of {Ind => "o"; Conj => "m"}; 
                                Per2 => "s"; 
                                Per3 => "t" };
                   Pl => table {Per1 => "mus"; 
                                Per2 => "tis"; 
                                Per3 => "nt"} };
-                               
-         impendings  : Number => Person => Str =  
-            \\n,p     => "ba"  + case <n,p> of { <Sg,Per1> => "m"; _ => presendings!n!p};
+                                                                     
+  impendings  : Mood -> Number => Person => Str =  \mood ->
+             \\n,p     => case mood of {Ind  => "ba";
+                                        Conj => "re"} + (presendings Conj)!n!p;                                             
+  pluperfendings  : Mood -> Number => Person => Str =  \mood ->
+            \\n,p => case mood of { Ind => "era"; Conj => "isse"} + (presendings Conj)!n!p;
+            
+  perfendings : Mood -> Number => Person => Str = \mood -> 
+          case mood of {Conj => \\n,p => "eri" + (presendings mood)!n!p ;
+                        Ind  =>
+                          table {Sg => table {Per1 => "i"; 
+                                              Per2 => "isti"; 
+                                              Per3 => "it" };
+                                 Pl => table {Per1 => "imus"; 
+                                              Per2 => "istis"; 
+                                              Per3 => "erunt"} }};
+       
+  pickEndings :  Mood -> Tempus -> Number => Person => Str = 
+      \m,t -> case t of {Pres => presendings m;Imperf => impendings m; Perf => perfendings m; PluPerf => pluperfendings m};
+
+      
+  mkVerb : Str  -> VerbInfo  -> Verb = \inf,verbinfo -> {
+    inf = inf;
+    decl = verbinfo.d;
+    stem = verbinfo.stem!Pres;
+    s = let                                              
+         mid  = verbinfo.mid;   
          
-     pluperfendings  : Number => Person => Str =  
-            \\n,p => "era" + case <n,p> of { <Sg,Per1> => "m"; _ => presendings!n!p};
-
-         perfendings : Number => Person => Str = 
-             table {Sg => table {Per1 => "i"; 
-                                 Per2 => "isti"; 
-                                 Per3 => "it" };
-                  Pl => table {  Per1 => "imus"; 
-                                 Per2 => "istis"; 
-                                 Per3 => "erunt"} };
-
-{-         perfendings : Number => Person => Str =   \\n,p => let 
-                                                              parts =  case <n,p> of {
-                                                                <Sg,Per2>   => <"i", "ti">;
-                                                                <Pl,Per3>   => <"eru","">;
-                                                                <Pl,Per2>   => <"is","">;
-                                                                <_,_>       => <"i","">}
-                                                             in
-                                                                parts.p1 + case <n,p> of 
-                                                                       {<Sg,Per1> => ""; _ => presendings!n!p} + parts.p2;
--}
-                                                      
-         pickStem :  Temp -> Number => Person => Str = \t -> \\n,p => case t of {Pres => stem; Imperf => stem; Perf => perfstem; PluPerf => perfstem};
-         pickEndings :  Temp -> Number => Person => Str = 
-             \t -> case t of {Pres => presendings;Imperf => impendings; Perf => perfendings; PluPerf => pluperfendings};
-                                                             
-         extraletters :  Temp -> Number -> Person  -> Str = \t,n,p -> case <t,n,p,decl> of 
-                             { <Pres,Sg,Per1,First>  => "";
-                               <Imperf,_,_,First>        => "a";
-                               <Imperf,_,_,Second | Third>       => "e";
-                               <Imperf,_,_,_>            => mid + "e";
-                              <Pres,Sg,Per1,Third>  => "";
-                              <Pres,Pl,Per3,Third>  => "u";
-                              <Pres,Pl,Per3,Fourth> => "iu"; 
-                              --<Perf,_,_,Third>  => "e";
-                              --<Perf,_,_,Fourth> => "ie";
-                              <Perf,_,_,_>      => "";
-                               <PluPerf,_,_,_>    => "";
-                              _                 => mid}                                   
-        in
-    
-    table { temp =>     
-    table { num  => 
-    table { pers => (pickStem temp)!num!pers + extraletters temp num pers  + ((pickEndings temp) ! num ! pers)}}
-          
-  }};
+         
+         istem : Bool = case inf of {viv+"ere" => True; _ => False};                                            
+         extraletters :  Tempus -> Number -> Person -> Mood -> Str = \t,n,p,mood -> 
+           let mid' = case <mid,verbinfo.d,mood,inf>  of {
+                      --  <"e", Third,Conj>          => "a" ;
+                        <"e", Third, Conj>           => "e";
+                        <"i", Third, Conj> => if_then_Str istem "a" "ia";
+                        <"i",Fourth, Conj> => "ia";
+                        <"a",First,Conj>           => "e";
+                        <"e",Second,Conj>          => "ea";
+                        
+                        _                          => mid} in
+         case <t,n,p,verbinfo.d,mood> of 
+                             { <Pres,Sg,Per1,First,Ind>          => "";
+                               <Pres,_,_,_,Conj>                 => mid';
+                               <Imperf,_,_,First,Ind>            => "a";
+                               <Imperf,_,_,Second | Third,Ind>   => "e";
+                               <Imperf,_,_,_,Ind>            => mid' + "e";
+                               <Imperf,_,_,_,Conj>           => if_then_Str istem "e" mid;
+                              <Pres,Sg,Per1,Third,Ind>       => "";
+                              <Pres,Pl,Per3,Third,Ind>       => "u";
+                              <Pres,Pl,Per3,Fourth,Ind>      => "iu"; 
+                              <Perf,_,_,_,_>               => "";
+                               <PluPerf,_,_,_,_>           => "";
+                              _                          => mid}  ;
+        
+    in  
+    \\mood,temp,num,pers =>
+    (verbinfo.stem!temp) + extraletters temp num pers mood  + ((pickEndings mood temp) ! num ! pers)       
+  };
     
   
   mkA = overload {
@@ -258,7 +325,7 @@ oper
               
           in
             case d of {
-             Third => case gender of {
+             Third => case gender of { 
                       Masc => mkNounTable {s = adj;  steminfo = newStem;  decl = d; gen = gender};
                       Fem  => mkNounTable {s = adj2; steminfo = newStem; decl = d; gen = gender};
                       Neut => mkNounTable {s = adj3; steminfo = newStem; decl = d; gen = gender}};
@@ -343,20 +410,17 @@ oper
         suffixes  = nounEndings np.decl np.gen in
   
          table { num => 
-          table {cas => 
+          table {cas => --{s = ""; firsttok = 
              changesuff num cas (st + addfun num cas + (suffixes num)!cas)}};
              
                       
                                          
   findStem : Str -> Declension -> Gender -> StemInfo = \s,d,g  ->    
     let 
-    
-  
 
       normal     : Funtype  = \_,_ -> "";
       normalsuff : Number -> Case -> Str -> Str  = \_,_,s -> s;
-      
-    
+          
       change2NomForm : Number -> Case -> Str -> Str = \n,c,ns -> 
          case <n,c> of {
               <Sg,Nom> => s;
@@ -461,7 +525,8 @@ oper
     {True => False;
      False => True};
 
-
+--  chooseStressNP : NPStress -> Str -> Str -> {s : Str; firsttok : Str; rest : Str} = 
+  --   \stress,s1,s2 -> {s = "";firsttok="";rest=""};
 
 
 }
