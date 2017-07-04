@@ -19,8 +19,10 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
      
      Imp = {s : Number => Str};
      S  = {s : {stress : ClauseStress; npstress : NPStress; vpstress : VPStress} => Str};
-     QS = {s : {stress : ClauseStress; npstress : NPStress; vpstress : VPStress} => Str};
+     QS = {s : {stress : ClauseStress; npstress : NPStress; vpstress : VPStress} => Gender => Number => Str};
      CN = {s : NPStress => Number => Case => {s : Str; firsttok : Str; rest : Str}; g : Gender};
+     
+     IP = {s : Gender => Number => Str}; 
      
      
      AP  = {s  : Gender => Number => Case => Tokens};   
@@ -28,12 +30,15 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
      NP  = {s : NPStress => Case =>  Tokens; a : Agreement; typ : NPType} ;
      
      VP  = {v : GVerb; compl : {stress : VPStress; objstress : NPStress; q : Bool} => Mood => Tempus => Agreement => Tokens};
+  
           
      Cl   = {s : {stress : ClauseStress; npstress : NPStress; vpstress : VPStress; q : Bool} => 
+       
               Tempus => Bool => Tokens};
+              
+     ClSlash = Cl; 
           
-     QCl  = {q : Str; cl : {stress : ClauseStress; npstress : NPStress; vpstress : VPStress} 
-               => Tempus => Bool => Str};
+     QCl  = {cl : {stress : ClauseStress; npstress : NPStress; vpstress : VPStress} => Gender => Number => Tempus => Bool => Str};
           
      Det  = {s : Gender => Case => Str; n : Number; empty : Bool};
     
@@ -42,6 +47,9 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
      Pol = {s : Str ; b : Bool} ;
      
      Comp  = {s  : NPStress => Gender => Number => Tokens};   
+     
+     
+     VPSlash = Verb2;
               
      Tense = MiniResLat.Tense;
      Ant = Ante;
@@ -195,14 +203,22 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
                         } }            
              }
                        };
-                       
-                            
-     QuestCl cl = {
-         q = ""; cl = \\stress,t,b => (cl.s ! {stress=stress.stress;npstress=stress.npstress;vpstress=stress.vpstress;q=True} ! t ! b).s};
-       
-       
   
-
+                    
+                       
+     QuestVP ip vp = {
+        cl = \\stress,gen,num,t,b => ip.s ! gen ! num ++ (vp.compl ! {stress=stress.vpstress;objstress=stress.npstress;q=False} ! Ind ! t ! (Agr gen num Per3)).s
+  
+     }   ;     
+     
+                                 
+    QuestCl cl =  { cl = \\stress,gen,num,t,b => case <gen,num> of 
+      {<Fem,Sg> =>  -- listing just one case to supress superfluous table entries..
+        (cl.s ! {stress=stress.stress;npstress=stress.npstress;vpstress=stress.vpstress;q=True} ! t ! b).s;
+       _        => nonExist}};
+       
+       
+ 
     
   
   
@@ -217,14 +233,43 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
     UseCl tmp pol cl = {
       s = \\stress => 
          (cl.s ! {stress=stress.stress;npstress=stress.npstress;vpstress=stress.vpstress;q = False} ! tmp ! pol.b).s};
-        
+         
+ 
         
     UseQCl tmp pol qcl =  {
-      s =  \\stress => qcl.q ++ (qcl.cl ! stress ! tmp ! pol.b) ++ BIND ++ "?"};
+      s =  \\stress,gen,num => (qcl.cl ! stress ! gen ! num !  tmp ! pol.b) ++ BIND ++ "?"};
        
        
- 
+    SlashV2a v2 = v2; 
+    
+    ComplSlash vps np = 
+       let vp' = UseV vps in
+       {v     = vp'.v;
+        compl = \\stress,mood,temp,agr => 
+          let vpcompl = vp'.compl ! stress  ! mood ! temp ! agr ;
+              nps     = np.s ! stress.objstress ! Ack
+          in 
+            chooseStressVP stress.stress vpcompl nps;
+          
+         };
+         
+     SlashVP np vps = 
+        let gv   = verb2gverb vps;
+            cmpl : {stress : VPStress; objstress : NPStress; q : Bool} => Mood => Tempus => Agreement => Tokens = \\_,mood,temp,agr => 
+                       case agr of {Agr gen num pers => let s = vps.s ! mood ! temp ! num ! pers in
+                                                            {s = s; firsttok = s; rest = ""}}
+        in
+        
+           PredVP np {v = gv; compl = cmpl};
+     
 
+         
+         
+         
+
+    
+
+  
 
 
      
@@ -285,10 +330,7 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
      
  -}   
     
- --   in_Prep   = {s = "in"; c = Abl; ctype = Pre }; -- concatfun = \_,st -> "in" ++ st } ;
-  --  to_Prep   = {s = "ad"; c = Ack; Pre} --concatfun = \_,st -> s ++ st};
-   -- on_Prep   = {s = "in"} ;
-    
+ 
     with_Prep = {s = "cum"; c = Abl; ctype = Post}; 
   
     i_Pron = {
@@ -320,10 +362,21 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
       a = Agr Masc Pl Per3 
       } ;
       
-  --  refl_Pron = {
-  --    s = table {Nom => nonExist} ... 
-  --   };
       
+      
+    who_IP = {s = \\gen,num => 
+      -- a = Agr gen num Per3; 
+        let
+           mkTab : Str -> Str -> Str -> Str -> Str -> Str -> Str = \s1,s2,s3,s4,s5,s6 -> 
+             case gen of {Masc => case num of {Sg => s1; Pl => s4};
+                          Fem  => case num of {Sg => s2; Pl => s5};
+                          Neut => case num of {Sg => s3; Pl => s6}} in
+           mkTab "qui" "quae" "quod" "qui" "quae" "quae"
+   };    
+
+
+  
+
     CoordS conj a b = {s = a.s ++ conj.s ++ b.s} ;
     
     PPos  = {s = [] ; b = True} ;
@@ -339,8 +392,8 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
    
       chooseStressVP : VPStress -> Tokens -> Tokens -> Tokens = 
          \stress,s1,s2 -> case stress of {
-                              VerbFirst => {s = s1.s ++ s2.s;firsttok=s1.firsttok;rest = s1.rest++s2.s};
-                              ObjFirst  => {s = s2.s ++ s1.s; firsttok=s2.firsttok;rest = s2.rest++s1.s}};
+                              VerbFirst => {s = s1.s ++ s2.s; firsttok= s1.firsttok;rest = s1.rest++s2.s};
+                              ObjFirst  => {s = s2.s ++ s1.s; firsttok=s2.firsttok; rest = s2.rest++s1.s}};
          
    
       chooseStressNP : NPStress -> Tokens -> Tokens -> Tokens = 

@@ -114,8 +114,9 @@ lin because_Subj = mkSubj "quod" Ind;
 
 lin why_IAdv = mkIAdv "quare";
 
--- lin be_V = mkVBe;
+lin be_V = mkVBe;
 
+--lin who_IP = mkIP "";
 
 
 

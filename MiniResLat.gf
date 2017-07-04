@@ -27,14 +27,11 @@ param
   
   
   
-  -- NPStress ;
-  
-  -- VerbFirst | ObjFirst IndirObjFirst;
-  
+ 
 
   ClauseStress = NPFirst | VPFirst ;
   
-  -- NPStress VPStress | VPFirst NPStress VPStress;
+
   
   
   Agreement = Agr Gender Number Person ;
@@ -49,9 +46,9 @@ oper
   
   Adjective : Type = {s : Gender => Number => Case => Str};
   
-  Verb : Type = {inf : Str; stem : Str; decl : Declension; s :  Mood => Tempus => Number => Person => Str}; --{s:Str;firsttok: Str}};
+  Verb : Type = {inf : Str; stem : Str; decl : Declension; s :  Mood => Tempus => Number => Person => Str}; 
   
-  Verb2 : Type = Verb ** {c : Str} ;
+  Verb2 : Type = Verb ; -- ** {c : Str} ;
   
   SComplVerb : Type = Verb ** {conj : Str};
   
@@ -109,10 +106,14 @@ be_GVerb : GVerb = verb2gverb mkVBe;
   
   mkIAdv : Str -> IAdv = \s -> {s = s};
   
-  
+
   mkVBe : Verb = 
-    let vinfo = getVerbInfoBe ;
-        v     = mkVerb "esse" vinfo in
+      let vinfo = 
+           {stem : Tempus => Str =
+                \\t => case t of {Pres => "e"; Imperf => "er";_ => "fu"};
+                mid  = "s";
+                d    = First}; 
+          v     = mkVerb "esse" vinfo in
     {
     s = \\mood,temp,num,pers => 
             let conjendings = (pickEndings Conj Pres) ! num ! pers ;
@@ -138,19 +139,16 @@ be_GVerb : GVerb = verb2gverb mkVBe;
   mkV = overload 
    { mkV : Str -> Verb = \s -> 
        let vinfo = getVerbInfo s in mkVerb s vinfo;
-     mkV : Str -> Declension -> Verb = \s,decl -> let vinfo = getVerbInfo s in
+     mkV : Str -> Declension -> Verb = \s,decl -> let vinfo = getVerbInfo s decl in
         mkVerb s vinfo**{d=decl};
      mkV : Str -> Str -> Declension -> Verb = \inf,pstem,decl -> let vinfo = getVerbInfo inf pstem decl in
         mkVerb inf vinfo**{d=decl}};
         
-     
-        
-                                                                    
+                                                                 
   mkV2 = overload {
-    mkV2 : Str -> Declension -> Verb2 = \s,d -> mkV s d ** {c = []};
-    mkV2 : Str -> Str -> Declension -> Verb2 = \s,p,d ->  mkV s p d ** {c = []} ;
-    mkV2 : Str         -> Verb2 = \s   -> mkV s ** {c = []}} ;
- --   mkV2 : Str  -> Str -> Verb2 = \s,p -> mkV s ** {c = p}} ;
+    mkV2 : Str -> Declension -> Verb2 = \s,d -> mkV s d ;--  ** {c = []};
+    mkV2 : Str -> Str -> Declension -> Verb2 = \s,p,d ->  mkV s p d ; -- ** {c = []} ;
+    mkV2 : Str         -> Verb2 = \s   -> mkV s }; -- ** {c = []}} ;
     
   mkVS = overload {
     mkVS : Str -> Str -> SComplVerb = \s,c -> ((mkV s) ** {conj = c});
@@ -158,19 +156,21 @@ be_GVerb : GVerb = verb2gverb mkVBe;
   
   getVerbInfo = overload {
   getVerbInfo : Str -> Str -> Declension -> VerbInfo = getVerbInfo3;
+  getVerbInfo : Str -> Declension -> VerbInfo = getVerbInfo2;
   getVerbInfo : Str -> VerbInfo = getVerbInfo1;
   };
-  
-  getVerbInfoBe : VerbInfo = 
-     {stem = \\t => case t of {Pres => "e"; Imperf => "er";_ => "fu"};
-      mid  = "s";
-      d    = First};
-  
+    
   getVerbInfo3 : Str -> Str -> Declension -> VerbInfo = \s,pst,decl -> 
      let cstem = cutStem s decl in
          {stem = \\t => case t of {Perf | PluPerf => pst; _ => cstem.stem};
           mid = cstem.mid;
           d   = decl};
+          
+  getVerbInfo2 : Str -> Declension -> VerbInfo = \s,decl -> 
+     let cstem = cutStem s decl in
+        {stem = \\t => cstem.stem;
+         mid = cstem.mid;
+         d   = decl};
                                                    
   getVerbInfo1 : Str -> VerbInfo = \s -> 
     let cstem = cutStem s in
@@ -195,14 +195,11 @@ be_GVerb : GVerb = verb2gverb mkVBe;
     
   cutStem1 : Str -> {stem:Str;mid:Str;perfmid : Str;d : Declension} = \s ->
     case s of {
-      aud  + "ire"  =>  {stem=aud;mid="i";   perfmid = "iv";d = Fourth};
+      aud  + "ire"  =>  {stem=aud; mid="i"; perfmid = "iv";d = Fourth};
       terr + "ere"  =>  {stem=terr;mid="e"; perfmid = "u" ;d = Second};
-      voc  + "are"  =>  {stem=voc;mid="a";  perfmid = "av";d = First}};
-      
+      voc  + "are"  =>  {stem=voc; mid="a"; perfmid = "av";d = First}};
       
  
-      
-    
   imperativeEndings : Str -> Declension -> {s : Str;pl : Str} = \st,decl ->
     case decl of {
       First  => {s = "a"; pl = "ate"};
@@ -334,8 +331,7 @@ be_GVerb : GVerb = verb2gverb mkVBe;
                       Fem => mkNounTable {s = adj; steminfo = newStem; decl = First; gen = gender};
                       _   => mkNounTable {s = adj; steminfo = newStem; decl = Second; gen = gender}                           
                       }  
-            }
-                     
+            }                     
       in {
          s = table {gender => genTable gender}
       };
@@ -524,9 +520,6 @@ be_GVerb : GVerb = verb2gverb mkVBe;
   isConsonant : Str -> Bool = \a -> case isVowel a of
     {True => False;
      False => True};
-
---  chooseStressNP : NPStress -> Str -> Str -> {s : Str; firsttok : Str; rest : Str} = 
-  --   \stress,s1,s2 -> {s = "";firsttok="";rest=""};
 
 
 }
