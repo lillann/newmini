@@ -7,6 +7,7 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
      PN  = ProperName ;
      A   = Adjective ;
      V   = Verb;
+     VV  = V2;
      V2  = Verb2;
      VS  = SComplVerb; 
      Adv = Adverb ;
@@ -17,39 +18,37 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
      Utt = SS;
      Conj = SS;
      
-     Imp = {s : Number => Str};
-     S  = {s : {stress : ClauseStress; npstress : NPStress; vpstress : VPStress} => Str};
-     QS = {s : {stress : ClauseStress; npstress : NPStress; vpstress : VPStress} => Gender => Number => Str};
+     Imp = {s : Number => Str; inf : Str};
+     S  = {s : {stress : ClauseStress; npstress : NPStress} => Str};
+     QS = {s : {stress : ClauseStress; npstress : NPStress} => Gender => Number => Str};
      CN = {s : NPStress => Number => Case => {s : Str; firsttok : Str; rest : Str}; g : Gender};
-     
-     IP = {s : Gender => Number => Str}; 
-     
-     
-     AP  = {s  : Gender => Number => Case => Tokens};   
-     
-     NP  = {s : NPStress => Case =>  Tokens; a : Agreement; typ : NPType} ;
-     
-     VP  = {v : GVerb; compl : {stress : VPStress; objstress : NPStress; q : Bool} => Mood => Tempus => Agreement => Tokens};
   
-          
-     Cl   = {s : {stress : ClauseStress; npstress : NPStress; vpstress : VPStress; q : Bool} => 
-       
-              Tempus => Bool => Tokens};
+     AP  = {s  : Gender => Number => Case => Tokens};        
+     NP  = {s : NPStress => Case =>  Tokens; a : Agreement; typ : NPType} ;
+     VP   = {v : GVerb; compl : Mood => Tempus => Agreement => Tokens; imp : Number => Str; inf : Str};  
+     
+     --Agr gen num per
+     --vps that can have imp:
+     --advVP (sleep here!)
+     --usecomp (be warm!) ()
+     --complslash (love it!) (vpslash -> np -> vp)
+     --useV
+     --compl vs (say that she runs!)
+     --
+     
+               
+     Cl   = {s : {stress : ClauseStress; npstress : NPStress; q : Bool} =>        
+              Tempus => Bool => Str};
               
-     ClSlash = Cl; 
-          
-     QCl  = {cl : {stress : ClauseStress; npstress : NPStress; vpstress : VPStress} => Gender => Number => Tempus => Bool => Str};
-          
+     ClSlash = {cl : Cl; slashstress : {objstress : NPStress; vpstress : VPStress}}; 
+     QCl  = {cl : {stress : ClauseStress;npstress : NPStress} => Gender => Number => Tempus => Bool => Str};
      Det  = {s : Gender => Case => Str; n : Number; empty : Bool};
-    
      Pron = {s : Case => Str ; a : Agreement} ;
-    
-     Pol = {s : Str ; b : Bool} ;
-     
-     Comp  = {s  : NPStress => Gender => Number => Tokens};   
-     
-     
-     VPSlash = Verb2;
+     IP = {s : Gender => Number => Case => Str}; 
+     Pol  = Bool;
+     Comp = {s  :Gender => Number => Tokens};   
+          
+     VPSlash = {v : Verb2; vpstress : VPStress; objstress : NPStress};
               
      Tense = MiniResLat.Tense;
      Ant = Ante;
@@ -70,7 +69,6 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
       TPast = TPa;
       ASimul = Sim;
       AAnter = Anter;
-      
       
       
    UseN n = {g = n.g; s = \\stress,num,cas => let str = n.s ! num ! cas in
@@ -125,7 +123,6 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
     s = \\stress,num,cas  => let adjs = (ap.s ! cn.g ! num ! cas) ;
                                  cns  =  cn.s ! stress ! num ! cas in
                               chooseStressNP stress cns adjs;
-    
     g = cn.g
     } ;
    
@@ -143,133 +140,160 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
       a   = p.a
       };
       
-    CompAP ap = {s = \\stress,gen,num => (ap.s!gen!num!Nom)};
-    CompNP np = {s = \\stress,gen,num => np.s ! stress ! Nom};
-    CompAdv adv = {s = \\_,_,_ => {s = adv.s; firsttok = adv.s; rest = ""}} ;
-    CompCN cn = {s = \\stress,gen,num => cn.s ! stress ! num ! Nom };
-   
-    
-    UseComp comp = let be  = be_GVerb 
-                   in
-     {v     = be; 
-      compl = \\stress,mood,temp,agr => 
-         case agr of {Agr g n p => 
-           
-              let aps = comp.s ! stress.objstress ! g ! n ;
-                  bes = be.s ! (Vf n p temp mood) in
-              
-              chooseStressVP stress.stress {s = bes; firsttok = bes; rest = ""} aps
-        
-        }};
+    CompAP ap =   {s = \\gen,num => (ap.s!gen!num!Nom)};
     
     
-    UseV v' = {
-       v = verb2gverb v';
-       compl = \\stress,m,t => table {Agr _ n p   => 
-       
+    CompNP np =   {s = \\_,_ => 
+       case np.typ of {
+            NPPron => (np.s ! NounFirst ! Nom); -- "Jag är jag" ? 
+            _      => variants {
+                       np.s ! NounFirst ! Nom
+                       ;
+                       np.s ! AdjFirst ! Nom 
+                       }}};
+                                        
+                                      
+    CompAdv adv = {s = \\_,_ => {s = adv.s; firsttok = adv.s; rest = ""}} ;
+  
+    CompCN cn =  {s = \\gen,num => 
+    
+    --- TODO: What about gender? Do they have to match ?
+    -- e.g. Puella puer est. (Puella magnus/magna puer est)?
+    -- 
+      variants {
+         (cn.s!NounFirst!num!Nom);
+         (cn.s!AdjFirst!num!Nom)          
+      }
+    };  
+
+    UseV v' = let gv = verb2gverb v' 
+       in {
+       v = gv; 
+       compl = \\m,t => 
+        table {Agr _ n p   => 
             let r = (v'.s ! m ! t !  n ! p) in
-                                               {s = r; firsttok = r ; rest = ""}}};
+            {s = r; firsttok = r ; rest = ""}                         
+     };
+       imp = \\num => v'.imp ! num;
+       inf = gv.s ! VInf 
+     };
                                                
 
-    AdvVP vp adv = {v = vp.v; compl = \\stress,mood,t,a => 
-        let vps = vp.compl!stress!mood!t!a in
-        {s = adv.s ++ vps.s; firsttok = adv.s; rest = vps.s}};
-   
-      
+    AdvVP vp adv = {
+        v = vp.v; 
+        compl = \\mood,t,a => 
+          let vps = vp.compl!mood!t!a in
+             {s = adv.s ++ vps.s; firsttok = adv.s; rest = vps.s};
+        imp = \\num => adv.s ++ vp.imp ! num;
+        inf = adv.s ++ vp.inf };
+        
     PredVP np vp = 
     {s = 
-          \\stress,t,b => let 
-                         typ  = np.typ;
-                         subj = (np.s ! stress.npstress ! Nom)  ;
-                         subjstressed = (np.s ! NounFirst ! Nom);
-                        
-                         pol  = case b of {False => "non"; True => ""};
-                         vs   = (vp.compl ! {stress=stress.vpstress;objstress=stress.npstress;q=stress.q} ! Ind ! t ! np.a) 
+      \\stress,t,b => 
+        let 
+            typ  = np.typ;
+            subj = (np.s ! stress.npstress ! Nom)  ;
+            subjstressed = (np.s ! NounFirst ! Nom);             
+            pol  = case b of {False => "non"; True => ""};
+            vs   = (vp.compl ! Ind ! t ! np.a) 
                                         
-                     in
-                   
-          case stress.stress of {
+         in                  
+        case stress.stress of {
             NPFirst => case <stress.q,b> of {
-                        <False,_>    => {s = subj.s ++ pol ++ vs.s; firsttok = ""; rest = "" };
-                       
-                        <True,True>  => {s = subjstressed.firsttok ++ BIND ++ "ne" ++ subj.rest ++ vs.s; firsttok = ""; rest = ""};
+                <False,_>     => subj.s ++ pol ++ vs.s;            
+                <True,True>   => subjstressed.firsttok ++ BIND ++ "ne" ++ subj.rest ++ vs.s;
+                <True,False>  => "nonne" ++ subj.s ++ vs.s};
                         
-   
-                        <True,False>  => {s = "nonne" ++ subj.s ++ vs.s; firsttok = ""; rest = ""}};
             VPFirst => case <stress.q,b> of {
-                        <False,_> => {s = pol ++ vs.s ++ subj.s ; firsttok = ""; rest = ""};
-                        <True,True> => {s = vs.firsttok ++ BIND ++ "ne" ++ vs.rest ++ subj.s; firsttok=""; rest = ""};
-                        <True,False> => {s = "nonne" ++ vs.s ++ subj.s; firsttok = ""; rest = ""
-                        } }            
-             }
+                <False,_> =>    pol ++ vs.s ++ subj.s;
+                <True,True> =>  vs.firsttok ++ BIND ++ "ne" ++ vs.rest ++ subj.s;
+                <True,False> => "nonne" ++ vs.s ++ subj.s
+                        } }                     
                        };
   
-                    
-                       
+   
      QuestVP ip vp = {
-        cl = \\stress,gen,num,t,b => ip.s ! gen ! num ++ (vp.compl ! {stress=stress.vpstress;objstress=stress.npstress;q=False} ! Ind ! t ! (Agr gen num Per3)).s
+        cl = \\stress,gen,num,t,_ => 
+                (ip.s ! gen ! num ! Nom ) ++ (vp.compl ! Ind ! t ! (Agr gen num Per3)).s
   
      }   ;     
-     
-                                 
-    QuestCl cl =  { cl = \\stress,gen,num,t,b => case <gen,num> of 
-      {<Fem,Sg> =>  -- listing just one case to supress superfluous table entries..
-        (cl.s ! {stress=stress.stress;npstress=stress.npstress;vpstress=stress.vpstress;q=True} ! t ! b).s;
-       _        => nonExist}};
+                                     
+    QuestCl cl =  { cl = \\stress,_,_,t,b => 
+        (cl.s ! {stress=stress.stress;npstress=stress.npstress;q=True} ! t ! b)};
+
        
-       
- 
-    
-  
-  
---    UttS s = s ;
---    UttNP np = {s = (np.s ! Ack).s} ; -- 
-    UttInterj i = {s = i.s ++ BIND ++ "!"} ;  
-    
---    CNInterjSg cn = {s = (cn.s ! Sg ! Voc) . s};
---    CNInterjPl cn = {s = (cn.s ! Pl ! Voc) . s};
-    
-  
     UseCl tmp pol cl = {
       s = \\stress => 
-         (cl.s ! {stress=stress.stress;npstress=stress.npstress;vpstress=stress.vpstress;q = False} ! tmp ! pol.b).s};
-         
- 
+         (cl.s ! {stress=stress.stress;npstress=stress.npstress;q = False} ! tmp ! pol)};
+       
+      -- UttAP  
+      --UttAdv
+      --UttCN
+      --UttIAdv
+    
+    UttImpPl pol imp = 
+       case pol of {True   => {s = imp.s ! Pl};
+                    False  => {s = "nolite" ++ imp.inf ++ BIND ++ "!"}}; 
+                    
+    UttImpSg pol imp = 
+       case pol of {True   => {s = imp.s ! Sg};
+                    False  => {s = "noli" ++ imp.inf ++ BIND ++ "!"}}; 
+      
+      
+    UttQS qs = {s = qs.s ! {stress=clausestressVariants;npstress=npstressVariants} ! genderVariants ! numberVariants};
+    
         
+    UttVP vp = {s = (vp.compl ! moodVariants ! tempusVariants ! (Agr genderVariants numberVariants personVariants))  . s};  
+    
+
+    UttS s   =  {s = s.s ! {stress = clausestressVariants; npstress = npstressVariants}};
+    
+    UttNP np = -- let stress = variants {NounFirst;AdjFirst} in
+       {s = variants{  (np.s ! npstressVariants ! caseVariants).s}};
+                          
+
+    UttInterj i = {s = i.s ++ BIND ++ "!"} ;  
+    
     UseQCl tmp pol qcl =  {
-      s =  \\stress,gen,num => (qcl.cl ! stress ! gen ! num !  tmp ! pol.b) ++ BIND ++ "?"};
+      s =  \\stress,gen,num => (qcl.cl ! {stress = stress.stress;npstress=stress.npstress } ! gen ! num !  tmp ! pol) ++ BIND ++ "?"};
        
-       
-    SlashV2a v2 = v2; 
+      
+    SlashV2a v2 = {v = v2; objstress=variants {NounFirst;AdjFirst};vpstress= variants{VerbFirst;ObjFirst}};
     
-    ComplSlash vps np = 
-       let vp' = UseV vps in
+    ComplSlash vps np =  let nps = (np.s ! vps.objstress ! Ack ) in -- "love it"
+       let vp' = UseV vps.v in
        {v     = vp'.v;
-        compl = \\stress,mood,temp,agr => 
-          let vpcompl = vp'.compl ! stress  ! mood ! temp ! agr ;
-              nps     = np.s ! stress.objstress ! Ack
+        compl = \\mood,temp,agr => 
+          let vpcompl = vp'.compl ! mood ! temp ! agr 
+              
           in 
-            chooseStressVP stress.stress vpcompl nps;
-          
-         };
-         
-     SlashVP np vps = 
-        let gv   = verb2gverb vps;
-            cmpl : {stress : VPStress; objstress : NPStress; q : Bool} => Mood => Tempus => Agreement => Tokens = \\_,mood,temp,agr => 
-                       case agr of {Agr gen num pers => let s = vps.s ! mood ! temp ! num ! pers in
-                                                            {s = s; firsttok = s; rest = ""}}
-        in
+            chooseStressVP vps.vpstress vpcompl nps;
+        imp = \\num => 
+               case vps.vpstress of {
+                  VerbFirst => vp'.imp ! num ++ nps.s ;
+                  ObjFirst  => nps.s ++ vp'.imp ! num 
+               };
+        inf = case vps.vpstress of {VerbFirst => vp'.inf ++ nps.s;
+                                    ObjFirst  => nps.s ++ vp'.inf
         
-           PredVP np {v = gv; compl = cmpl};
-     
+          
+         }};
 
-         
-         
-         
 
-    
+     SlashVP np vps = -- "(whom) he sees"
+       let vp' = UseV vps.v in
+       {cl = PredVP np vp'; slashstress =  {vpstress = vps.vpstress; objstress = vps.objstress}}; 
+       
+       
+       
+     QuestSlash ip cls =  -- "who does he see"
+        {cl = \\stress,gen,num,temp,bool =>
+             ip.s ! gen ! num ! Ack ++ cls.cl.s ! {stress =stress.stress;npstress=stress.npstress;q=False} ! temp ! bool};
 
-  
+
+
+ 
+         
 
 
      
@@ -303,8 +327,12 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
 
       
     
---      ImpVP vp = 
---        {s =  vp.v.imp};
+     ImpVP vp = 
+        {s =  \\num => vp.imp!num ++ BIND ++  "!"; inf = vp.inf} ;
+        
+       
+              
+                  
         
   
       
@@ -334,53 +362,58 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
     with_Prep = {s = "cum"; c = Abl; ctype = Post}; 
   
     i_Pron = {
-      s = table {Nom => "ego" ; Ack => "me"; Gen => "mei"; Dat => "mihi"; Abl => "me"; Voc => nonExist};
+      s = makeCaseTable "ego" "mei" "mihi" "me" "me" nonExist;
       a = Agr Fem Sg Per1 
       } ;
     youSg_Pron = {
-      s = table {Nom => "tu" ; Ack => "te"; Gen => "tui"; Dat => "tibi"; Abl => "te"; Voc => nonExist};
+      s = makeCaseTable "tu" "tui" "tibi" "te" "te" nonExist;
       a = Agr Masc Sg Per2 
       } ;
+      
+    -- Note: ille/illa/illud ("that") can be used as 3rd person pronoun.
     he_Pron = {
-      s = table {Nom => "is" ; Ack => "eum"; Gen => "eius"; Dat => "ei"; Abl => "eo"; Voc => nonExist};
+      s = makeCaseTable "is" "eius" "ei" "eum" "eo" nonExist ; 
       a = Agr Masc Sg Per3 
       } ;
     she_Pron = {
-      s = table {Nom => "ea" ; Ack => "eam"; Gen => "eius"; Dat => "ei"; Abl => "ea"; Voc => nonExist};
+      s = makeCaseTable "ea" "eius" "ei" "eam" "ea" nonExist ; 
       a = Agr Fem Sg Per3 
       } ;
     we_Pron = {
-       s = table {Nom => "nos" ; Ack => "nos"; Gen => "nostri"; Dat => "nobis"; Abl => "nobis"; Voc => nonExist};
+       s = makeCaseTable "nos" "nostri" "nobis" "nos" "nobis" nonExist ; 
       a = Agr Masc Pl Per1  
       } ;
     youPl_Pron = {
-       s = table {Nom => "vos" ; Ack => "vos"; Gen => "vestri"; Dat => "vobis"; Abl => "vobis"; Voc => nonExist};
+       s = makeCaseTable "vos" "vestri" "vobis" "vos" "vobis" nonExist ; 
       a = Agr Masc Pl Per2 
       } ;
     they_Pron = {
-      s = table {Nom => "ii" ; Ack => "eos"; Gen => "eorum"; Dat => "iis"; Abl => "iis"; Voc => "?"};
+      s = makeCaseTable "ii" "eorum" "iis" "eos" "iis" nonExist ; 
       a = Agr Masc Pl Per3 
       } ;
       
       
       
-    who_IP = {s = \\gen,num => 
+    who_IP  = {s = \\gen,num,cas => 
       -- a = Agr gen num Per3; 
         let
-           mkTab : Str -> Str -> Str -> Str -> Str -> Str -> Str = \s1,s2,s3,s4,s5,s6 -> 
+           pickW : Str -> Str -> Str -> Str -> Str -> Str -> Str = \s1,s2,s3,s4,s5,s6 -> 
              case gen of {Masc => case num of {Sg => s1; Pl => s4};
                           Fem  => case num of {Sg => s2; Pl => s5};
                           Neut => case num of {Sg => s3; Pl => s6}} in
-           mkTab "qui" "quae" "quod" "qui" "quae" "quae"
-   };    
+          case cas of {Nom => pickW "qui" "quae" "quod" "qui" "quae" "quae";
+                       Ack => pickW "quem" "quad" "quod" "quos" "quas" "quae";
+                       _   => nonExist -- we don't need other cases yet.
+                       
+   }};    
 
 
   
 
     CoordS conj a b = {s = a.s ++ conj.s ++ b.s} ;
     
-    PPos  = {s = [] ; b = True} ;
-    PNeg  = {s = [] ; b = False} ;
+    PPos  = True ;
+    PNeg  = False ;
 
     and_Conj = {s = "et"} ;
     or_Conj = {s = "aut"} ;
@@ -390,15 +423,20 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
       Tokens : Type = {s : Str;firsttok : Str;rest : Str};
    
    
-      chooseStressVP : VPStress -> Tokens -> Tokens -> Tokens = 
-         \stress,s1,s2 -> case stress of {
-                              VerbFirst => {s = s1.s ++ s2.s; firsttok= s1.firsttok;rest = s1.rest++s2.s};
-                              ObjFirst  => {s = s2.s ++ s1.s; firsttok=s2.firsttok; rest = s2.rest++s1.s}};
-         
+ --     chooseStressClause : ClauseStress -> Tokens -> Tokens
    
+      chooseStressVP : VPStress -> Tokens -> Tokens -> Tokens = 
+         \stress,s1,s2 -> 
+            case stress of {
+               VerbFirst  => {s = s1.s ++ s2.s; firsttok= s1.firsttok;rest = s1.rest++s2.s};
+               ObjFirst    => {s = s2.s ++ s1.s; firsttok=s2.firsttok; rest = s2.rest++s1.s}};
+               -- NoStress  => {s = s1.s ++ s2.s; firsttok = s1.firsttok; rest = s1.rest++s2.s}};
+                              
+    
       chooseStressNP : NPStress -> Tokens -> Tokens -> Tokens = 
-         \stress,s1,s2 -> case stress of {
-                              NounFirst => {s = s1.s ++ s2.s;firsttok=s1.firsttok;rest = s1.rest++s2.s};
-                              AdjFirst  => {s = s2.s ++ s1.s; firsttok=s2.firsttok;rest = s2.rest++s1.s}};
+         \stress,s1,s2 -> 
+            case stress of {
+                NounFirst => {s = s1.s ++ s2.s;firsttok=s1.firsttok;rest = s1.rest++s2.s};
+                AdjFirst  => {s = s2.s ++ s1.s; firsttok=s2.firsttok;rest = s2.rest++s1.s}};
     
 }

@@ -113,8 +113,7 @@ abstract ExtMiniGrammar = MiniGrammar
     UttCN     : CN   -> Utt ;               -- house
     UttAP     : AP   -> Utt ;               -- fine
     UttInterj : Interj -> Utt ;             -- alas
-    CNInterjSg  : CN -> Interj ;              -- slave!
-    CNInterjPl : CN -> Interj;              -- slaves!
+  
     
 
 -- Conjunction

@@ -92,9 +92,9 @@ lin very_AdA = mkAdjA "multum";
 lin love_V2 = mkV2 "amare";
 lin buy_V2   = mkV2 "emere" Third;
 
-lin eat_V2 = mkV2 "manducare" ;
+lin eat_V2 = mkV2  "manducare" ;
 lin find_V2 = mkV2 "invenire" "inven" Fourth;
-lin see_V2 = mkV2 "videre" "vid" Second;
+lin see_V2 = mkV2  "videre" "vid" Second;
 
 lin kill_V2 = mkV2 "necare" ;
 lin read_V2 = mkV2 "legere" Third;
@@ -115,6 +115,8 @@ lin because_Subj = mkSubj "quod" Ind;
 lin why_IAdv = mkIAdv "quare";
 
 lin be_V = mkVBe;
+
+lin want_VV = mkVWant;
 
 --lin who_IP = mkIP "";
 
