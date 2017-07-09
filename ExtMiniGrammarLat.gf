@@ -1,13 +1,12 @@
 concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef in {
 
-
   lincat
   
      N   = Noun ;
      PN  = ProperName ;
      A   = Adjective ;
      V   = Verb;
-     VV  = V2;
+     VV  = Verb; -- V2;
      V2  = Verb2;
      VS  = SComplVerb; 
      Adv = Adverb ;
@@ -26,15 +25,6 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
      AP  = {s  : Gender => Number => Case => Tokens};        
      NP  = {s : NPStress => Case =>  Tokens; a : Agreement; typ : NPType} ;
      VP   = {v : GVerb; compl : Mood => Tempus => Agreement => Tokens; imp : Number => Str; inf : Str};  
-     
-     --Agr gen num per
-     --vps that can have imp:
-     --advVP (sleep here!)
-     --usecomp (be warm!) ()
-     --complslash (love it!) (vpslash -> np -> vp)
-     --useV
-     --compl vs (say that she runs!)
-     --
      
                
      Cl   = {s : {stress : ClauseStress; npstress : NPStress; q : Bool} =>        
@@ -74,7 +64,9 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
    UseN n = {g = n.g; s = \\stress,num,cas => let str = n.s ! num ! cas in
                                        {s = str; firsttok = str; rest = ""}};
                                                                                           
-   DetCN det cn = {
+   DetCN det cn = 
+     
+    {
          s = \\stress,cas => 
                 let cns = (cn.s ! stress ! det.n ! cas) ;
                     dets = det.s ! cn.g ! cas
@@ -85,17 +77,20 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
           a = Agr cn.g det.n Per3;   
           typ = NPNoun
          };
+
+   emptytable = {s = table {g => table {cas => "" }}; n = Sg; empty=True};
+
          
-         a_Det     = {s = table {g => table {cas => "" }}; n = Sg; empty=True};
-         the_Det   = {s = table {g => table {cas => ""} }; n = Sg; empty=True};  
-         aPl_Det   = {s = table {g => table {cas => ""} }; n = Pl; empty=True};
-         thePl_Det = {s = table {g => table {cas => ""} }; n = Pl; empty=True};
+   a_Det     = emptytable;
+   the_Det   = emptytable;  
+   aPl_Det   = emptytable;
+   thePl_Det = emptytable;
     
-         every_Det = let tabl = mkA "omnis" "omne" Third in 
+   every_Det = let tabl = mkA "omnis" "omne" Third in 
            {s = table { g => table {cas => tabl.s!g!Sg!cas} };
             n = Sg; empty=False};
        
-         all_Det = let tabl = mkA "omnis" "omne" Third in 
+   all_Det = let tabl = mkA "omnis" "omne" Third in 
            {s = table { g => table {cas => tabl.s!g!Pl!cas} };
             n = Pl;empty=False};
             
@@ -178,7 +173,19 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
        inf = gv.s ! VInf 
      };
                                                
-
+    --want to run
+    -- ordföljd:
+    -- volo currere (vellem currere)
+    -- ... si currere vellem
+    ComplVV vv vp = {
+       v     = verb2gverb vv;
+       compl = \\mood,t,a => case a of {Agr _ num per => 
+                 let vvs = vv.s ! mood ! t ! num ! per in
+                {s = vvs ++ vp.inf; firsttok = vvs; rest = vp.inf}};
+       imp   = \\num => nonExist;
+       inf   = vv.inf ++ vp.inf 
+    };
+    
     AdvVP vp adv = {
         v = vp.v; 
         compl = \\mood,t,a => 
@@ -226,11 +233,15 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
       s = \\stress => 
          (cl.s ! {stress=stress.stress;npstress=stress.npstress;q = False} ! tmp ! pol)};
        
-      -- UttAP  
-      --UttAdv
-      --UttCN
-      --UttIAdv
-    
+      
+    UttAdv adv = adv;
+     
+    UttIAdv iadv = iadv;
+      
+    UttCN cn = {s = (cn.s ! npstressVariants!numberVariants!caseVariants).s};  
+        
+    UttAP ap = {s = (ap.s ! genderVariants ! numberVariants ! caseVariants ).s};
+        
     UttImpPl pol imp = 
        case pol of {True   => {s = imp.s ! Pl};
                     False  => {s = "nolite" ++ imp.inf ++ BIND ++ "!"}}; 
@@ -238,21 +249,19 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
     UttImpSg pol imp = 
        case pol of {True   => {s = imp.s ! Sg};
                     False  => {s = "noli" ++ imp.inf ++ BIND ++ "!"}}; 
-      
-      
+
     UttQS qs = {s = qs.s ! {stress=clausestressVariants;npstress=npstressVariants} ! genderVariants ! numberVariants};
-    
-        
+           
     UttVP vp = {s = (vp.compl ! moodVariants ! tempusVariants ! (Agr genderVariants numberVariants personVariants))  . s};  
     
-
     UttS s   =  {s = s.s ! {stress = clausestressVariants; npstress = npstressVariants}};
     
     UttNP np = -- let stress = variants {NounFirst;AdjFirst} in
        {s = variants{  (np.s ! npstressVariants ! caseVariants).s}};
                           
-
     UttInterj i = {s = i.s ++ BIND ++ "!"} ;  
+    
+    
     
     UseQCl tmp pol qcl =  {
       s =  \\stress,gen,num => (qcl.cl ! {stress = stress.stress;npstress=stress.npstress } ! gen ! num !  tmp ! pol) ++ BIND ++ "?"};
@@ -328,18 +337,8 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
       
     
      ImpVP vp = 
-        {s =  \\num => vp.imp!num ++ BIND ++  "!"; inf = vp.inf} ;
+        {s =  \\num => vp.imp!num ++ BIND ++  "!"; vp.inf} ; -- inf should be nonExist for posse,volle etc..
         
-       
-              
-                  
-        
-  
-      
-
-   
-  
-      
   --QuestIAdv iadv cl = {q = iadv.s; cl = cl.s};   
 
 {-      
@@ -392,12 +391,11 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
       a = Agr Masc Pl Per3 
       } ;
       
-      
-      
+
     who_IP  = {s = \\gen,num,cas => 
-      -- a = Agr gen num Per3; 
         let
-           pickW : Str -> Str -> Str -> Str -> Str -> Str -> Str = \s1,s2,s3,s4,s5,s6 -> 
+           pickW : Str -> Str -> Str -> Str -> Str -> Str -> Str = 
+            \s1,s2,s3,s4,s5,s6 -> 
              case gen of {Masc => case num of {Sg => s1; Pl => s4};
                           Fem  => case num of {Sg => s2; Pl => s5};
                           Neut => case num of {Sg => s3; Pl => s6}} in
@@ -407,8 +405,6 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
                        
    }};    
 
-
-  
 
     CoordS conj a b = {s = a.s ++ conj.s ++ b.s} ;
     
@@ -422,17 +418,12 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
    
       Tokens : Type = {s : Str;firsttok : Str;rest : Str};
    
-   
- --     chooseStressClause : ClauseStress -> Tokens -> Tokens
-   
       chooseStressVP : VPStress -> Tokens -> Tokens -> Tokens = 
          \stress,s1,s2 -> 
             case stress of {
                VerbFirst  => {s = s1.s ++ s2.s; firsttok= s1.firsttok;rest = s1.rest++s2.s};
-               ObjFirst    => {s = s2.s ++ s1.s; firsttok=s2.firsttok; rest = s2.rest++s1.s}};
-               -- NoStress  => {s = s1.s ++ s2.s; firsttok = s1.firsttok; rest = s1.rest++s2.s}};
-                              
-    
+               ObjFirst   => {s = s2.s ++ s1.s; firsttok=s2.firsttok; rest = s2.rest++s1.s}};
+             
       chooseStressNP : NPStress -> Tokens -> Tokens -> Tokens = 
          \stress,s1,s2 -> 
             case stress of {

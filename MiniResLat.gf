@@ -22,9 +22,7 @@ param
   Ante  = Sim | Anter ; 
   Mood = Ind | Conj ; -- | Imp ; 
   
-  MaybeStress = NoStress | Stress VPStress ;
-  -- | StressVP VPStress | StressVPNP VPStress NPStress ;
-  
+ 
   NPStress     = NounFirst | AdjFirst ;    --equus magnus, magnus equus
   VPStress     = ObjFirst | VerbFirst ;    --
   
@@ -35,11 +33,11 @@ param
 
 oper
  
-  caseVariants = variants {Nom;Gen;Dat;Ack;Abl;Voc};
+  caseVariants   = variants {Nom;Gen;Dat;Ack;Abl;Voc};
   personVariants = variants {Per1;Per2;Per3};
   genderVariants = variants {Fem;Masc;Neut};
   tempusVariants = variants {Pres;Imperf;Perf;PluPerf};
-  moodVariants = variants {Ind;Conj};
+  moodVariants   = variants {Ind;Conj};
   numberVariants = variants {Sg;Pl};
   npstressVariants = variants {NounFirst;AdjFirst};
   vpstressVariants = variants {ObjFirst;VerbFirst};
@@ -47,8 +45,6 @@ oper
  
  
   Subj : Type = {s : Str; m : Mood};
-  
-
 
   Noun : Type = {s : Number => Case => Str; g : Gender};
   
@@ -56,10 +52,6 @@ oper
   
   Adjective : Type = {s : Gender => Number => Case => Str};
   
---  Verb : Type = {inf : Str; stem : Str; decl : Declension; s :  Mood => Tempus => Number => Person => Str}; 
-  
---  Verb2 : Type = {inf : Str; stem : Str; decl : Declension; s :  Mood => Tempus => Number => Person => Str};
-
   Verb : Type = {inf : Str;  imp : Number => Str; s :  Mood => Tempus => Number => Person => Str}; 
   
   Verb2 : Type = {inf : Str; imp : Number => Str; s :  Mood => Tempus => Number => Person => Str}; 
@@ -71,9 +63,7 @@ oper
   IAdv : Type = {s : Str};
   
   Interjection : Type = {s : Str};
-  
-
-    
+ 
   GVerb : Type = {
     s   : VForm => Str ;
     imp : Number => Str ;
@@ -82,20 +72,13 @@ oper
     isAux : Bool
    } ;
 
-
-
-
 be_GVerb : GVerb = verb2gverb mkVBe;
 
   verb2gverb : Verb -> GVerb = \v -> {s =
     table {
-      VInf       => v.inf;
-      
+      VInf       => v.inf;   
       Vf n p t m => (v.s ! m ! t  ! n ! p) 
       } ;
- --  imp   = let imps = imperativeEndings v.inf v.decl in         
---               table {Sg   => v.stem ++ BIND ++ imps.s;
---                      Pl   => v.stem ++ BIND ++ imps.pl};
     imp = v.imp;
     cas   = Ack;
     isAux = False
@@ -135,6 +118,7 @@ be_GVerb : GVerb = verb2gverb mkVBe;
     s = \\mood,temp,num,pers => 
             let conjendings = (pickEndings Conj Pres) ! num ! pers ;
                 normal      = v.s ! mood ! temp ! num ! pers in
+             
             case <temp,mood> of {            
                     <Pres,Ind> => case <pers,num> of {
                                     <Per1,Sg> => "sum";
@@ -148,10 +132,8 @@ be_GVerb : GVerb = verb2gverb mkVBe;
                     _ => normal};
     inf  = "esse";
     imp = table {Sg => "es"; Pl => "este"};
- --   stem = v.stem;
---    decl = v.decl    
     };
-    
+   
   mkVWant : Verb =
         let vinfo = 
          {stem : Tempus => Str =
@@ -175,9 +157,30 @@ be_GVerb : GVerb = verb2gverb mkVBe;
                       _ => normal};
       inf  = "volle";
       imp = \\num => nonExist;
-  --    stem = v.stem;
-  --    decl = v.decl    
       };  
+      
+  mkVCan : Verb = 
+      let 
+          beVerb = mkVBe.s;
+          vinfo = 
+               {stem : Tempus => Str =
+                    \\t => case t of {Pres => "poss"; Imperf => "pot";_ => "potu"};
+                    mid  = "";
+                    d    = First}; 
+          v     = mkVerb "posse" vinfo 
+      in { 
+       s = \\mood,temp,num,pers =>
+          let beEndings =  beVerb!mood!temp!num!pers in 
+          case temp of 
+            {Perf | PluPerf => v.s ! mood ! temp ! num ! pers ; 
+             Pres => 
+               case <pers,num,mood> of {<Per1,_,_> | <Per3,Pl,_> => "pos"; <_,_,Ind> => "pot"; _ => "pos"} + 
+               beEndings;      
+             Imperf  => case mood of {Ind => "pot" +  beEndings; 
+                                      _   => "po" + drop 1 beEndings}}; 
+       inf = "posse";
+       imp = \\num => nonExist;
+      };
             
     
 
@@ -185,20 +188,29 @@ be_GVerb : GVerb = verb2gverb mkVBe;
   mkV = overload 
    { mkV : Str -> Verb = \s -> 
        let vinfo = getVerbInfo s in mkVerb s vinfo;
-     mkV : Str -> Declension -> Verb = \s,decl -> let vinfo = getVerbInfo s decl in
+     mkV : Str -> Declension -> Verb = \s,decl -> 
+      let vinfo = getVerbInfo s decl in
         mkVerb s vinfo;
-     mkV : Str -> Str -> Declension -> Verb = \inf,pstem,decl -> let vinfo = getVerbInfo inf pstem decl in
+     mkV : Str -> Str -> Declension -> Verb = \inf,pstem,decl -> 
+      let vinfo = getVerbInfo inf pstem decl in
         mkVerb inf vinfo};
         
                                                                  
   mkV2 = overload {
-    mkV2 : Str -> Declension -> Verb2 = \s,d -> mkV s d ;--  ** {c = []};
-    mkV2 : Str -> Str -> Declension -> Verb2 = \s,p,d ->  mkV s p d ; -- ** {c = []} ;
-    mkV2 : Str -> Verb2 = \s   -> mkV s }; -- ** {c = []}} ;
+    mkV2 : Str -> Declension -> Verb2 = 
+      \s,d -> mkV s d ;
+    mkV2 : Str -> Str -> Declension -> Verb2 = 
+      \s,p,d ->  mkV s p d ;
+    mkV2 : Str -> Verb2 = 
+      \s   -> mkV s 
+  }; 
     
   mkVS = overload {
-    mkVS : Str -> Str -> SComplVerb = \s,c -> ((mkV s) ** {conj = c});
-    mkVS : Str -> Str -> Str -> Declension -> SComplVerb =  \s,ps,c,decl -> ((mkV s ps decl) ** {conj = c})}; 
+    mkVS : Str -> Str -> SComplVerb = 
+      \s,c -> ((mkV s) ** {conj = c});
+    mkVS : Str -> Str -> Str -> Declension -> SComplVerb =  
+      \s,ps,c,decl -> ((mkV s ps decl) ** {conj = c})
+  }; 
   
   getVerbInfo = overload {
   getVerbInfo : Str -> Str -> Declension -> VerbInfo = getVerbInfo3;
@@ -260,8 +272,9 @@ be_GVerb : GVerb = verb2gverb mkVBe;
   impendings  : Mood -> Number => Person => Str =  \mood ->
              \\n,p     => case mood of {Ind  => "ba";
                                         Conj => "re"} + (presendings Conj)!n!p;                                             
-  pluperfendings  : Mood -> Number => Person => Str =  \mood ->
-            \\n,p => case mood of { Ind => "era"; Conj => "isse"} + (presendings Conj)!n!p;
+  pluperfendings  : Mood -> Number => Person => Str =  
+    \mood -> \\n,p => 
+       case mood of { Ind => "era"; Conj => "isse"} + (presendings Conj)!n!p;
             
   perfendings : Mood -> Number => Person => Str = \mood -> 
           case mood of {Conj => \\n,p => "eri" + (presendings mood)!n!p ;
@@ -274,7 +287,8 @@ be_GVerb : GVerb = verb2gverb mkVBe;
                                               Per3 => "erunt"} }};
        
   pickEndings :  Mood -> Tempus -> Number => Person => Str = 
-      \m,t -> case t of {Pres => presendings m;Imperf => impendings m; Perf => perfendings m; PluPerf => pluperfendings m};
+      \m,t -> case t of {Pres => presendings m;Imperf => impendings m; 
+                         Perf => perfendings m; PluPerf => pluperfendings m};
 
       
   mkVerb : Str  -> VerbInfo  -> Verb = \inf,verbinfo -> 
@@ -283,8 +297,9 @@ be_GVerb : GVerb = verb2gverb mkVBe;
          
          
            istem : Bool = case inf of {viv+"ere" => True; _ => False};                                            
-           extraletters :  Tempus -> Number -> Person -> Mood -> Str = \t,n,p,mood -> 
-             let mid' = case <mid,verbinfo.d,mood,inf>  of {
+           extraletters :  Tempus -> Number -> Person -> Mood -> Str = 
+            \t,n,p,mood -> 
+              let mid' = case <mid,verbinfo.d,mood,inf>  of {
                         --  <"e", Third,Conj>          => "a" ;
                           <"e", Third, Conj>           => "e";
                           <"i", Third, Conj> => if_then_Str istem "a" "ia";
@@ -293,7 +308,7 @@ be_GVerb : GVerb = verb2gverb mkVBe;
                           <"e",Second,Conj>          => "ea";
                         
                           _                          => mid} in
-           case <t,n,p,verbinfo.d,mood> of 
+               case <t,n,p,verbinfo.d,mood> of 
                                { <Pres,Sg,Per1,First,Ind>          => "";
                                  <Pres,_,_,_,Conj>                 => mid';
                                  <Imperf,_,_,First,Ind>            => "a";
@@ -313,10 +328,11 @@ be_GVerb : GVerb = verb2gverb mkVBe;
     inf = inf;
     decl = verbinfo.d;
     stem = verbinfo.stem!Pres;
-  
-    imp = \\num => verbinfo.stem ! Pres + (imperativeEndings verbinfo.d num)   ;
+    imp = \\num => 
+      verbinfo.stem ! Pres + (imperativeEndings verbinfo.d num);
     s = \\mood,temp,num,pers =>
-    (verbinfo.stem!temp) + extraletters temp num pers mood  + ((pickEndings mood temp) ! num ! pers)       
+    (verbinfo.stem!temp) + extraletters temp num pers mood  + 
+      ((pickEndings mood temp) ! num ! pers)       
   };
     
   imperativeEndings : Declension -> Number -> Str = \decl,num ->
@@ -336,8 +352,10 @@ be_GVerb : GVerb = verb2gverb mkVBe;
     mkA : (m,f,n : Str) -> Declension ->  Adjective = mkAdj3 ; 
     } ;
   
-    mkAdj : Str -> Declension -> Adjective = \adj,d -> mkAdj3 adj adj adj d;
-    mkAdj2 : Str -> Str -> Declension -> Adjective = \adj1,adj2,d ->  mkAdj3 adj1 adj1 adj2 d;
+    mkAdj : Str -> Declension -> Adjective = 
+      \adj,d -> mkAdj3 adj adj adj d;
+    mkAdj2 : Str -> Str -> Declension -> Adjective = 
+      \adj1,adj2,d ->  mkAdj3 adj1 adj1 adj2 d;
        
     mkAdj3 : Str -> Str -> Str ->  Declension -> Adjective = \adj,adj2,adj3,d ->  
       let

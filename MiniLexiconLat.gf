@@ -117,6 +117,7 @@ lin why_IAdv = mkIAdv "quare";
 lin be_V = mkVBe;
 
 lin want_VV = mkVWant;
+lin can_VV = mkVCan;
 
 --lin who_IP = mkIP "";
 

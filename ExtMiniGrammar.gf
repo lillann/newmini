@@ -149,7 +149,7 @@ abstract ExtMiniGrammar = MiniGrammar
     who_IP       : IP ;
     this_Quant   : Quant ;
     when_IAdv    : IAdv ;
-    why_IAdv     : IAdv ; -- subordinate question ("the disciple asked why paulus didn't come to Rome") --> Conjunctive  
+    why_IAdv     : IAdv ;   
     want_VV      : VV ;
     can_VV       : VV ;
  
