@@ -122,8 +122,8 @@ concrete MiniGrammarLat of MiniGrammar = open MiniResLat, Prelude in {
      
     
     
-  in_Prep   = {s = "in"; c = Abl; ctype = Pre }; -- concatfun = \_,st -> "in" ++ st } ;
-  to_Prep   = {s = "ad"; c = Ack; ctype = Pre};  --concatfun = \_,st -> s ++ st};
+  in_Prep   = {s = "in"; c = Abl; ctype = Pre }; 
+  to_Prep   = {s = "ad"; c = Ack; ctype = Pre};  
 --  on_Prep   = {s = "in"} ;
     
     with_Prep = {s = "cum"; c = Abl; ctype = Suff}; -- concatfun = \nptype,st -> case nptype of {NPPron => st + "cum" ; _ => "cum" ++ st}} ;

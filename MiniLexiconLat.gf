@@ -110,7 +110,28 @@ lin wait_V2 = mkV2 "expectare" ;
 lin alas_Interj = mkInterj "eheu";
 
 lin if_Subj = mkSubj "si" Ind;
-lin because_Subj = mkSubj "quod" Ind;
+--http://www.csun.edu/~hcfll004/conditions.html
+--"i go home if she comes" - present/future indicative
+
+lin because_Subj = mkSubj "quod" Conj;
+--http://www.thelatinlibrary.com/101/cumclauses.pdf
+-- Causal: A causal cum clause state the cause of the action in the main clause. The mood in
+-- a cum causal clause is subjunctive 
+
+-- lin when_Subj = mkSubj "cum" (variants {Ind;Conj});
+
+-- Temporal: A temporal cum clause simply states the time at which something occurs
+-- without any further relationship between the events. The mood in a cum temporal clause
+-- is indicative: Cum Romae estis, agite sicut Romani.
+-- When you are in Rome, do like the Romans 
+
+
+-- lin when_Subj .
+-- Circumstantial: A circumstantial cum clause states the circumstances or surrounding
+-- events at the time of the action in the main clause. The mood in a cum circumstantial
+-- clause is subjunctive:
+-- Caesar cum loqueretur, ab inimics interfectus est.
+-- When Caesar was speaking, he was killed by his enemies. 
 
 lin why_IAdv = mkIAdv "quare";
 

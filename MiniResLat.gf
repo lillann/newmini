@@ -22,15 +22,15 @@ param
   Ante  = Sim | Anter ; 
   Mood = Ind | Conj ; -- | Imp ; 
   
- 
   NPStress     = NounFirst | AdjFirst ;    --equus magnus, magnus equus
   VPStress     = ObjFirst | VerbFirst ;    --
   
   ClauseStress = NPFirst | VPFirst ;  
   
+
+  
   Agreement = Agr Gender Number Person ;
   
-
 oper
  
   caseVariants   = variants {Nom;Gen;Dat;Ack;Abl;Voc};
@@ -39,31 +39,40 @@ oper
   tempusVariants = variants {Pres;Imperf;Perf;PluPerf};
   moodVariants   = variants {Ind;Conj};
   numberVariants = variants {Sg;Pl};
-  npstressVariants = variants {NounFirst;AdjFirst};
-  vpstressVariants = variants {ObjFirst;VerbFirst};
+  
+  
+  npstressVariants     = variants {NounFirst;AdjFirst};
+  vpstressVariants     = variants {ObjFirst;VerbFirst};
   clausestressVariants = variants {NPFirst;VPFirst};
+  
+  
  
  
   Subj : Type = {s : Str; m : Mood};
 
   Noun : Type = {s : Number => Case => Str; g : Gender};
   
-  Preposition = {s : Str; c : Case; ctype : ConcatType}; -- concatfun : NPType -> Str -> Str} ;    
+  Preposition = {s : Str; c : Case; ctype : ConcatType}; 
   
   Adjective : Type = {s : Gender => Number => Case => Str};
   
-  Verb : Type = {inf : Str;  imp : Number => Str; s :  Mood => Tempus => Number => Person => Str}; 
+  Verb : Type  = {inf : Str;  imp : Number => Str; s :  Mood => Tempus => Number => Person => Str}; 
   
-  Verb2 : Type = {inf : Str; imp : Number => Str; s :  Mood => Tempus => Number => Person => Str}; 
+  Verb2 : Type = {inf : Str;  imp : Number => Str; s :  Mood => Tempus => Number => Person => Str}; 
   
-  SComplVerb : Type = Verb ** {conj : Str};
+  Quantifier : Type = {s : Number => Case => Gender => Str; empty : Bool};
   
-  Adverb : Type = {s : Str} ;
-  AdjA : Type = {s : Str};
-  IAdv : Type = {s : Str};
+  SComplVerb : Type = {v : Verb; conj : Str};
+  
+  Adverb : Type = {s : Str};
+  AdjA   : Type = {s : Str};
+  IAdv   : Type = {s : Str};
   
   Interjection : Type = {s : Str};
+  
  
+
+{- 
   GVerb : Type = {
     s   : VForm => Str ;
     imp : Number => Str ;
@@ -83,17 +92,26 @@ be_GVerb : GVerb = verb2gverb mkVBe;
     cas   = Ack;
     isAux = False
     } ;
+-}    
     
-    
-  StemInfo : Type = {stem : Str; extraLetters : Number -> Case -> Str; changeSuffix : Number -> Case  -> Str -> Str};
+  StemInfo : Type = {stem : Str; 
+                     extraLetters : Number -> Case -> Str; 
+                     changeSuffix : Number -> Case  -> Str -> Str
+                    };
   
-  VerbInfo : Type = {stem : Tempus => Str; mid : Str; d : Declension};
+  VerbInfo : Type = {stem : Tempus => Str; 
+                     mid : Str; 
+                     d : Declension
+                     };
   
   Funtype  : Type = Number -> Case -> Str;
-  ProperName : Type = {s : Case => Str; g : Gender; typ : PNType} ;
+  ProperName : Type = {s : Case => Str; 
+                       g : Gender; 
+                       typ : PNType
+                       };
   
-  agrV : GVerb -> Agreement ->  Mood -> Tempus -> Str = \v,a,m,t -> case a of {
-    Agr _ n p  => v.s ! Vf n p t m
+  agrV : Verb -> Agreement ->  Mood -> Tempus -> Str = \v,a,m,t -> case a of {
+    Agr _ n p  => v.s ! m ! t ! n ! p --  Vf n p t m
     } ;
     
  
@@ -207,9 +225,9 @@ be_GVerb : GVerb = verb2gverb mkVBe;
     
   mkVS = overload {
     mkVS : Str -> Str -> SComplVerb = 
-      \s,c -> ((mkV s) ** {conj = c});
+      \s,c -> {v = (mkV s);conj = c};
     mkVS : Str -> Str -> Str -> Declension -> SComplVerb =  
-      \s,ps,c,decl -> ((mkV s ps decl) ** {conj = c})
+      \s,ps,c,decl ->{v =  (mkV s ps decl);conj = c}
   }; 
   
   getVerbInfo = overload {
