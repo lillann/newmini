@@ -14,8 +14,8 @@ concrete MiniGrammarLat of MiniGrammar = open MiniResLat, Prelude in {
      
  CN  = Noun ;  
      
-     AP  = Adjective; -- : Gender => Number => Case => Str
-      NP  = {s : Case =>  Str; a : Agreement; typ : NPType} ;
+ AP  = Adjective; -- : Gender => Number => Case => Str
+ NP  = {s : Case =>  Str; a : Agreement; typ : NPType} ;
      
  Prep = Preposition;     
  VP  = {v : GVerb; compl : Agreement => Str}; -- obj : Agreement => Str; compl : Str};          

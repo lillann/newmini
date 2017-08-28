@@ -113,7 +113,7 @@ lin if_Subj = mkSubj "si" Ind;
 --http://www.csun.edu/~hcfll004/conditions.html
 --"i go home if she comes" - present/future indicative
 
-lin because_Subj = mkSubj "quod" Conj;
+lin because_Subj = mkSubj "quod" Sub;
 --http://www.thelatinlibrary.com/101/cumclauses.pdf
 -- Causal: A causal cum clause state the cause of the action in the main clause. The mood in
 -- a cum causal clause is subjunctive 
@@ -135,12 +135,12 @@ lin because_Subj = mkSubj "quod" Conj;
 
 lin why_IAdv = mkIAdv "quare";
 
-lin be_V = mkVBe;
+lin be_V     = mkVBe;
 
-lin want_VV = mkVWant;
-lin can_VV = mkVCan;
+lin want_VV  = mkVWant;
+lin can_VV   = mkVCan;
 
---lin who_IP = mkIP "";
+lin who_IP   = mkIPWho;
 
 
 

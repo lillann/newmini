@@ -1,4 +1,4 @@
-concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef in {
+concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef, Coordination in {
 
   lincat
   
@@ -19,46 +19,58 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
      Conj = SS;
      
      Imp = {s : Number => Str; inf : Str};
-     S   = {s : {stress : ClauseStress; npstress : NPStress; vpstress : VPStress} => Str};
-     QS  = {s : {stress : ClauseStress; npstress : NPStress} => Gender => Number => Str};
-     CN  = {s : NPStress => Number => Case => {s : Str; firsttok : Str; rest : Str}; g : Gender};
+     S   = Sentence ; 
+     QS  = QSentence ; 
+     CN  = CNoun;
   
-     AP  = {s  : Gender => Number => Case => Tokens};        
-     NP  = {s : NPStress => Case => Tokens; a : Agreement; typ : NPType} ;
-          
-     VP  = {
-            
-            v : Verb;
-            compl : {obj : NP ; adv : Adv; compl : S }; 
-            imp : Number => Str; 
-           };
-
-     Cl   = {s : {stress : ClauseStress; npstress : NPStress; vpstress : VPStress; q : Bool} =>        
-                 Tempus => Bool => Str};
+     AP  = AdjectivePhrase;       
+     NP  = NounPhrase ;
+             
+     VP  = VerbPhrase;
+     
+     Cl   = {s : {stress : ClauseStress; npstress : NPStress; vpstress : VPStress; advstress : AdvStress; q : Bool} =>  
+               Tempus => Bool => Str};
               
      ClSlash = {cl : Cl; slashstress : {objstress : NPStress; vpstress : VPStress}}; 
-     QCl  = {cl : {stress : ClauseStress;npstress : NPStress} => Gender => Number => Tempus => Bool => Str};
+     QCl  = {cl : {stress : ClauseStress;npstress : NPStress; vpstress : VPStress; advstress : AdvStress} => 
+              Gender => Number => Tempus => Bool => Str};
      Det  = {s : Gender => Case => Str; n : Number; empty : Bool};
      Pron = {s : Case => Str ; a : Agreement} ;
-     IP = {s : Gender => Number => Case => Str}; 
+     IP = IPron ; -- {s : Gender => Number => Case => Str}; 
      Pol  = Bool;
-     Comp = {s  : Gender => Number => Tokens};   
-          
+     Comp = {adv : {isFilled : Bool; value : Str};   -- TODO: Probably needs to be a Token, to pick out the first adv in the case of a question.
+             cn  : {isFilled  : Bool; value : CNoun};
+             np  : {isFilled  : Bool; value : NounPhrase};
+             ap  : {isFilled  : Bool; value : AdjectivePhrase}};
+           
      VPSlash = {v : Verb2; vpstress : VPStress; objstress : NPStress};
+
+     ListAP  = {s : Case => Gender => Number => {first : Str; second : Str}};
+     
+     ListAdv = {first : Str; second : Str};
+     
+     ListNP = {s : Case => NPStress => {first : Str; second : Str}};
+     
+     ListS = {s : SentenceStress => {first: Str; second : Str}};
+ --    ListNP  = {s : Case => NPStress => Tokens} ;
+ --    ListS   = {};
+ 
+ 
+ 
      
      Quant = Quantifier;
      Tense = MiniResLat.Tense;
      Ant   = Ante;
      Temp  = Tempus;
-        
+     
   lin
   
     TTAnt = \tense,ant -> case <tense,ant> of {
    
-      <TPr,Sim>   => Pres;
-      <TPr,Anter> => Perf;
-      <TPa,Sim>   => Imperf;
-      <TPa,Anter> => PluPerf
+    <TPr,Sim>   => Pres;
+    <TPr,Anter> => Perf;
+    <TPa,Sim>   => Imperf;
+    <TPa,Anter> => PluPerf
     
     };
     
@@ -69,6 +81,13 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
       
     NumSg    = Sg;
     NumPl    = Pl;  
+    
+    PPos = True;
+    PNeg = False;
+    
+    and_Conj = {s = "et"};
+    or_Conj  = {s = "aut"}; -- exclusive or 
+    -- vel - inclusive or
       
     i_Pron = {
         s = makeCaseTable "ego" "mei" "mihi" "me" "me" nonExist;
@@ -102,47 +121,40 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
       } ;
          
     UseN n = 
-      {g = n.g; s = \\stress,num,cas => 
+      {g = n.g; s = \\cas,stress,num => 
         let str = n.s ! num ! cas in
           {s = str; firsttok = str; rest = ""}};
     
     UsePron p = 
       {     
-      s = \\stress,cas => case <stress,cas> of {
+      s = \\cas,stress => case <stress,cas> of {
          <AdjFirst,Nom> => {s = "";firsttok = ""; rest = ""}; 
          _              => let ps = p.s ! cas in {s = ps; firsttok = ps; rest = ""}};
       typ = NPPron;
       a   = p.a
       };
       
-    UsePN pn  = {s = \\stress,cas => {s = pn.s ! cas; firsttok = pn.s ! cas; rest = ""}; 
+    UsePN pn  = {s = \\cas,stress => {s = pn.s ! cas; firsttok = pn.s ! cas; rest = ""}; 
                  a = Agr pn.g Sg Per3; 
                  typ = NPPN pn.typ};
     
       
       
-   --   CN  = {s : NPStress => Number => Case => {s : Str; firsttok : Str; rest : Str}; g : Gender};
-  --    NP  = {s : NPStress => Case => Tokens; a : Agreement; typ : NPType} ;
-      
-      
    IndefArt = {s = \\_,_,_ => ""; empty = True};
    DefArt   = {s = \\_,_,_ => ""; empty = True}; 
     
- -- {s : Num => Case => Gender => Str};
   
-    
-    
     this_Quant = {s = \\num,cas => 
      
      case num of {
       Sg => 
        case cas of
         {
-         Nom => genderTable "hic" "haec" "hoc";
+         Nom => genderTable "hic"   "haec" "hoc";
          Gen => genderTable "huius" "huius" "huius";
-         Dat => genderTable "huic" "huic" "huic";
-         Ack => genderTable "hunc" "hanc" "hoc";
-         Abl => genderTable "hoc" "hac" "hoc";
+         Dat => genderTable "huic"  "huic" "huic";
+         Ack => genderTable "hunc"  "hanc" "hoc";
+         Abl => genderTable "hoc"   "hac" "hoc";
          Voc => genderTable nonExist nonExist nonExist  
          };
       Pl => 
@@ -168,18 +180,18 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
     DetCN det cn = 
     
      {
-          s = \\stress,cas => 
-                 let cns = (cn.s ! stress ! det.n ! cas) ;
+          s = \\cas,stress => 
+                 let cns = (cn.s ! cas ! stress ! det.n ) ;
                      dets = det.s ! cn.g ! cas
                  in
                  {s = dets ++ cns.s;
                   firsttok = case det.empty of {True => cns.firsttok; False => dets}; 
-                  rest = case det.empty of {True => cns.rest; False => cns.s}};                              
+                  rest     = case det.empty of {True => cns.rest; False => cns.s}};                              
            a = Agr cn.g det.n Per3;   
            typ = NPNoun
           };
           
-    PositA a = {s = \\gen,num,cas => let st = (a.s)!gen!num!cas in
+    PositA a = {s = \\cas,gen,num => let st = (a.s)!gen!num!cas in
       {s = st; firsttok = st; rest = ""}} ;
       
     AdAP adv ap = {s =      
@@ -189,96 +201,236 @@ concrete ExtMiniGrammarLat of ExtMiniGrammar = open MiniResLat, Prelude, Predef 
                     {s = s; firsttok = firsttok;rest = rest}
       };
     
-      
-      
-      -- CN  = {s : NPStress => Number => Case => {s : Str; firsttok : Str; rest : Str}; g : Gender};
-      --   AP  = {s  : Gender => Number => Case => Tokens}; 
-  
+    
     AdjCN ap cn = {
-      s = \\stress,num,cas  => let adjs = (ap.s ! cn.g ! num ! cas) ;
-                                   cns  =  cn.s ! stress ! num ! cas in
+      s = \\cas,stress,num  => let adjs = (ap.s ! cas ! cn.g ! num) ;
+                                   cns  =  cn.s ! cas ! stress ! num  in
                                 chooseStressNP stress cns adjs;
       g = cn.g
       } ;
       
- 
+       
     UseV v = 
       {
-      v     = v;   
-      compl = {obj = nonExist; adv = nonExist; compl = nonExist};
-      imp   = v.imp;
-      s = v.s ! Ind ! Pres ! Sg ! Per3  -- to linearize vps (?)
+        v     = v;   
+        compl = dummyVPTable;
+        s = v.inf 
+      };
+      
+      
+    AdvVP vp adv = 
+       {
+       v     = vp.v;
+       compl = vp.compl ** 
+                {adv = {isFilled = True;
+                        value    = (vp.compl.adv.value) ++ adv.s
+                            }
+                };
+       s = vp.s ++ adv.s
+       };
+                
+    ComplVV vv vp = 
+          {
+          v = vv;
+          compl = vp.compl ** 
+            {vp = 
+               {isFilled = True; 
+                value = {inf = vp.v.inf ++ vp.s; 
+                imp = \\num => nonExist; 
+                s = \\m,t,n,p => 
+                   {s = vp.v.inf ++ (vp.compl.vp.value.s ! m ! t ! n ! p) . s; 
+                    firsttok =vp.v.inf;
+                    rest = (vp.compl.vp.value.s ! m ! t ! n ! p) . s };
+                                 
+             }}};   
+   
+          s = vp.s ++ vv.inf --infinitive form  
+          };
+          
+       
+     ComplVS vs s = 
+         {
+          v     = vs.v;
+          compl = dummyVPTable ** 
+                    {s = {isFilled = True;
+                          value    = {s = \\stress => vs.conj.s ! stress ++ s.s ! stress}}};    
+          s = (s.s ! dummySentenceStress) ++ vs.v.inf};
+          
+      
+     PredVP np vp = 
+       {
+
+         s = \\stress,t,b => 
+         let 
+             typ  =         np.typ;
+   
+             linnp  = (np.s ! Nom ! stress.npstress);
+             agrnp  = np.a;
+             linv      =  case np.a of {Agr _ n p => vp.v.s ! Ind ! t !  n ! p};
+             vpcompl   =  case np.a of {Agr g n p =>  vp.compl.vp.value.s ! Ind ! t ! n ! p}; -- TODO modify mood
+             scompl    = (vp.compl.s.value.s ! (clausestress2sentencestress stress)); -- str
+             npcompl   = (vp.compl.np.value.s ! Ack ! stress.npstress); --tokens
+             advcompl  = vp.compl.adv.value ; --str
+             cncompl   = case np.a of {Agr g n p => (vp.compl.cn.value.s ! Nom ! stress.npstress ! n)} ;  --tokens
+             apcompl   = case np.a of {Agr g n p => (vp.compl.ap.value.s ! Nom ! g ! n)} ;  -- tokens
+                        
+             linvp = lin_vp vp np.a stress t
+          in 
+          case stress.stress of {
+             NPFirst => 
+                case <b,stress.q> of {<False,False> => linnp.s ++ "non" ++ linvp.s;
+                                      <True, False> => linnp.s ++ linvp.s;
+                                      <False,True>  => "nonne" ++ linnp.s ++ linvp.s;
+                                      <True,True>   => linnp.firsttok ++ linnp.rest ++ BIND ++ "ne" ++ linvp.s};
+             VPFirst => 
+                 case <b,stress.q> of {<False,False> => "non" ++ linvp.s ++ linnp.s;
+                                       <True, False> => linvp.s ++ linnp.s;
+                                       <False,True>  => "nonne" ++ linvp.s ++ linnp.s;
+                                       <True,True>   => linvp.firsttok ++ BIND ++ "ne" ++ linvp.rest ++  linnp.s
+                                       }}};
+         
+      
+    CompNP np   = dummyCompTable ** {np = {isFilled = True; value = np}};
+ 
+    CompAP ap   = dummyCompTable ** {ap = {isFilled = True; value = ap}};
+                                    
+    CompAdv adv = dummyCompTable ** {adv = {isFilled = True; value = adv.s}};
+    
+    CompCN cn   = dummyCompTable ** {cn =  {isFilled = True; value = cn};
+                                     s  = (cn.s ! Nom ! NounFirst ! Sg).s};
+                                     
+    UseComp comp = 
+              {
+              v     = mkVBe;
+              compl = dummyVPTable ** {np = comp.np};
+              s =  "esse" 
+              };
+           
+    UseCl tmp pol cl = {
+      s = \\stress => cl.s ! (sentencestress2clausestress stress False) ! tmp ! pol} ;
+         
+    AdvS adv s = 
+     {s = \\stress => case stress.advstress of 
+       { AdvFirst => adv.s ++ s.s ! stress;
+         AdvLast  => s.s ! stress }      
+     };
+     
+     
+    BaseAdv adv1 adv2 = {first = adv1.s; second = adv2.s};
+    
+    BaseAP ap1 ap2    = {s = \\cas,num,gen => 
+                               {first = (ap1.s ! cas ! num ! gen).s;
+                                second = (ap2.s ! cas ! num ! gen).s}};
+                       
+                       
+-- {s : Case => NPStress => Tokens; a : Agreement; typ : NPType} ;         
+    BaseNP np1 np2 = {s = \\cas,npstress =>
+                         {first  = (np1.s ! cas ! npstress ).s;
+                          second = (np2.s ! cas ! npstress ).s}};
+                          
+                          
+    BaseS s1 s2 = {s = \\stress =>
+                     {first  = s1.s ! stress;
+                      second = s2.s ! stress}};
+    
+                   
+    ConjAP conj listap = {s = \\cas,gen,num => let lap = listap.s ! cas ! gen ! num in
+                         {firsttok = lap.first;
+                          rest = conj.s ++ lap.second;
+                          s    = lap.first ++ conj.s ++ lap.second
+                          }};
+                          
+    ConjAdv conj listadv = {s = listadv.first ++ conj.s ++ listadv.second};
+    
+    ConjNP conj listnp = {s = \\cas,npstress => let lnp = listnp.s ! cas ! npstress in
+                         {firsttok = lnp.first;
+                          rest = conj.s ++ lnp.second;
+                          s    = lnp.first ++ conj.s ++ lnp.second}; a = Agr Masc Pl Per3; typ = NPNoun };
+                          --TODO: change gender to Fem when all female
+                          
+    ConjS conj lists = {s = \\stress => (lists.s!stress).first ++ conj.s ++ (lists.s!stress).second};
+                         
+
+    QuestVP ip vp = {cl = \\stress,gen,num,temp,_ => 
+                            ip.s ! gen ! num ! Nom ++ (lin_vp vp (Agr gen num Per3) (stress**{q  = False}) temp).s};
+                            
+    QuestCl cl = {cl = \\stress,_,_,temp,b => 
+      cl.s ! (sentencestress2clausestress stress False) ! temp ! b
     };
     
-    CompNP np =   {s = \\_,_ => 
-       case np.typ of {
-            NPPron => (np.s ! NounFirst ! Nom); -- "Jag är jag" ? 
-            _      => variants {
-                       np.s ! NounFirst ! Nom
-                       ;
-                       np.s ! AdjFirst ! Nom 
-                       }}};
-                       
-    CompAP ap =   {s = \\gen,num => (ap.s!gen!num!Nom)};
-    
-    
+ oper --{s : Case => Gender => Number => Tokens};  
+ 
 
-                                        
-                                      
-    CompAdv adv = {s = \\_,_ => {s = adv.s; firsttok = adv.s; rest = ""}} ;
-    
-    
-    -- Cl   = {s : {stress : ClauseStress; npstress : NPStress; vpstress : VPStress; q : Bool} =>        
-   --              Tempus => Bool => Str};
-   --  NP  = {s : NPStress => Case => Tokens; a : Agreement; typ : NPType} ;
-          
- --    VP  = {
-  --          v : Verb;
-  --          compl : {obj : NP ; adv : Adv; compl : S }; 
-  --          imp : Number => Str; 
-  --         };
-  
- --  Verb : Type  = {inf : Str;  imp : Number => Str; s :  Mood => Tempus => Number => Person => Str}; 
  
+ lin_vp : VP -> Agreement -> ClStress -> Tempus -> Tokens =
+         \vp,agr,stress,t -> 
+
+       let
+            linv      =  case agr of {Agr _ n p => vp.v.s ! Ind ! t !  n ! p};
+            vpcompl   =  case agr of {Agr g n p =>  vp.compl.vp.value.s ! Ind ! t ! n ! p}; -- TODO modify mood
+            scompl    = (vp.compl.s.value.s ! (clausestress2sentencestress stress)); -- str
+            npcompl   = (vp.compl.np.value.s ! Ack ! stress.npstress); --tokens
+            advcompl  = vp.compl.adv.value ; --str
+            cncompl   = case agr of {Agr g n p => (vp.compl.cn.value.s ! Nom ! stress.npstress ! n)} ;  --tokens
+            apcompl   = case agr of {Agr g n p => (vp.compl.ap.value.s ! Nom ! g ! n)} ;  -- tokens
+            vptoks  =
+             case <vp.compl.vp.isFilled,vp.compl.s.isFilled, vp.compl.np.isFilled, 
+                   vp.compl.adv.isFilled,vp.compl.cn.isFilled>  of  
+                 {<True,_,_,_,_>  => 
+                     <vpcompl.firsttok, vpcompl.rest ++ scompl ++ npcompl.s ++ advcompl ++ cncompl.s ++ apcompl.s>;    
+                  <False,True,_,_,_> => 
+                     <scompl, npcompl.s ++ advcompl ++ cncompl.s ++ apcompl.s>;
+                  <False,False,True,_,_>   => <npcompl.firsttok,npcompl.rest++advcompl ++ cncompl.s ++ apcompl.s>;
+                  <False,False,False,True,_>     => <advcompl,  cncompl.s ++ apcompl.s>;
+                  <False,False,False,False,True> => <cncompl.firsttok, cncompl.rest ++ apcompl.s>;
+                  <_,_,_,_,False>    => <apcompl.firsttok,apcompl.rest> };
+                    
+             vps = vptoks.p1 ++ vptoks.p2
+             
+        in  case stress.vpstress of 
+                     {VerbFirst => {firsttok = linv.s; 
+                                    rest = vps; 
+                                    s = linv.s ++ vps}; 
+                      ObjFirst  => {firsttok = vptoks.p1; 
+                                    rest = vptoks.p2 ++ linv.s; 
+                                    s= vps ++ linv.s}};  
  
- {-   
-    PredVP np vp = 
-       {s = 
-         \\stress,t,b => 
-           let 
-               typ  =         np.typ;
-               subj =         (np.s ! stress.npstress ! Nom)  ;
-               subjstressed = (np.s ! NounFirst ! Nom);             
-               pol  = case b of {False => "non"; True => ""};
-            
-               v           = (vp.v.s) ! Ind ! t ! case np.a of {Agr _ num p => num ! p};
-               vs          = (vp.v.s) ! Ind ! t ! stress.vpstress ! stress.npstress ! np.a
-                                        
-            in                  
-           case stress.stress of {
-               NPFirst => case <stress.q,b> of {
-                   <False,_>     => subj.s ++ pol ++ vs.s;            
-                   <True,True>   => subjstressed.firsttok ++ BIND ++ "ne" ++ subj.rest ++ vs.s;
-                   <True,False>  => "nonne" ++ subj.s ++ vs.s};
-                        
-               VPFirst => case <stress.q,b> of {
-                   <False,_> =>    pol ++ vs.s ++ subj.s;
-                   <True,True> =>  vs.firsttok ++ BIND ++ "ne" ++ vs.rest ++ subj.s;
-                   <True,False> => "nonne" ++ vs.s ++ subj.s
-                           } }                     
-          };
--}  
-    
-    
-    
-      
- oper  
-      
-   Tokens : Type = {s : Str;firsttok : Str;rest : Str};
+  dummyCompTable =
+                  {
+                   adv =  {isFilled    = False; value = ""};
+                   st   =  "";
+                   np  =  {isFilled    = False; value = dummyNP};
+                   ap  =  {isFilled    = False; value = dummyAP};
+                   cn  =  {isFilled    = False; value = dummyCN}};
+                              
+  dummyVPTable  =
+                dummyCompTable ** {vp = {isFilled = False; value = dummyVerb};
+                                   s  = {isFilled = False; value = dummySentence}} ;
+              
+        
+   dummyAgr = Agr Fem Sg Per1;
    
+   dummyCN       : CNoun = {s = \\_,_,_ => dummyTokens; g = Fem};
+   dummySentence : Sentence =   {s = \\_ => ""}; 
+   dummyNP       : NounPhrase            =   {s = \\_,_ => dummyTokens; a = dummyAgr; typ = NPNoun};
+   dummyTokens   : Tokens = {s = ""; firsttok = ""; rest = ""};
+   dummyVerb     : Verb = {inf = ""; imp = \\_=>""; s = \\_,_,_,_ => dummyTokens};
+   dummyAP       : AdjectivePhrase = {s = \\_,_,_ => dummyTokens};
+   
+   dummySentenceStress : SentenceStress = 
+           {stress = NPFirst; npstress = NounFirst; vpstress = VerbFirst; advstress = AdvFirst};
+             
    genderTable : Str -> Str -> Str -> Gender => Str = 
      \s1,s2,s3 -> table {Masc => s1; Fem => s2; Neut => s3};
-     
+
+ 
+    clausestress2sentencestress : ClStress -> SentenceStress = \stress -> 
+      {stress=stress.stress;npstress=stress.npstress;vpstress=stress.vpstress;advstress=stress.advstress};
+      
+    sentencestress2clausestress : SentenceStress -> Bool -> ClStress = \stress,b -> 
+      {stress=stress.stress;npstress=stress.npstress;vpstress=stress.vpstress;advstress=stress.advstress;q = b};
+    
+       
    chooseStressNP : NPStress -> Tokens -> Tokens -> Tokens = 
              \stress,s1,s2 -> 
                 case stress of {
