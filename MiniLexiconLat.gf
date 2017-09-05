@@ -41,8 +41,8 @@ lin water_N    = mkNoun "aqua" First Fem ;
 lin wine_N     = mkNoun "vinum" Second Neut ;
 lin woman_N    = mkNoun "femina" First Fem ;
 
-lin john_PN       = mkPN "Ioannes" Third Masc Name ;
-lin paris_PN       = mkPN "Paris" Third Masc Place;
+lin john_PN    = mkPN  "Ioannes" Third Masc Name ;
+lin paris_PN   = mkPN "Paris" Third Masc Place;
 
 -- Adjectives
 lin bad_A      = mkA "malus" Second;
@@ -69,35 +69,35 @@ lin green_A    = mkA "viridis" "viride" Third ;
 lin heavy_A    = mkA "gravis" "grave" Third ;
 
 -- VERBS
-lin jump_V = mkV "salire" "salu" Fourth;
-lin come_V = mkV "venire" "ven" Fourth;
-lin play_V = mkV "ludere" "lus" Third;
-lin run_V  = mkV "currere" "cucurr" Third;
-lin go_V   = mkV "vadere" "vad" Third;
-lin walk_V = mkV "ambulare" ;
-lin live_V = mkV "vivere" "vix" Third ;
-lin sleep_V = mkV "dormire" ;
-lin swim_V  = mkV "natare" ;
+lin jump_V   = mkV "salire" "salu" Fourth;
+lin come_V   = mkV "venire" "ven" Fourth;
+lin play_V   = mkV "ludere" "lus" Third;
+lin run_V    = mkV "currere" "cucurr" Third;
+lin go_V     = mkV "vadere" "vad" Third;
+lin walk_V   = mkV "ambulare" ;
+lin live_V   = mkV "vivere" "vix" Third ;
+lin sleep_V  = mkV "dormire" ;
+lin swim_V   = mkV "natare" ;
 lin travel_V = mkV "viare" ;
+
 lin drink_V2 = mkV2 "bibere" Third ;
 
 lin say_VS  =  mkVS "dicere" "dix" "quod" Third ; 
-
-lin know_VS = mkVS "scire" "quod"; 
+lin know_VS =  mkVS "scire" "quod"; 
 
 lin already_Adv = mkAdv "iam" ;
-lin now_Adv = mkAdv "nunc" ;
-lin very_AdA = mkAdjA "multum";
+lin now_Adv    = mkAdv "nunc" ;
 
-lin love_V2 = mkV2 "amare";
-lin buy_V2   = mkV2 "emere" Third;
 
-lin eat_V2 = mkV2  "manducare" ;
-lin find_V2 = mkV2 "invenire" "inven" Fourth;
-lin see_V2 = mkV2  "videre" "vid" Second;
+lin love_V2    = mkV2 "amare";
+lin buy_V2     = mkV2 "emere" Third;
 
-lin kill_V2 = mkV2 "necare" ;
-lin read_V2 = mkV2 "legere" Third;
+lin eat_V2     = mkV2 "manducare" ;
+lin find_V2    = mkV2 "invenire" "inven" Fourth;
+lin see_V2     = mkV2 "videre" "vid" Second;
+
+lin kill_V2    = mkV2 "necare" ;
+lin read_V2    = mkV2 "legere" Third;
 
 
 lin teach_V2 = mkV2 "docere" ;
@@ -109,11 +109,12 @@ lin wait_V2 = mkV2 "expectare" ;
 
 lin alas_Interj = mkInterj "eheu";
 
-lin if_Subj = mkSubj "si" Ind;
+
+
 --http://www.csun.edu/~hcfll004/conditions.html
 --"i go home if she comes" - present/future indicative
 
-lin because_Subj = mkSubj "quod" Sub;
+
 --http://www.thelatinlibrary.com/101/cumclauses.pdf
 -- Causal: A causal cum clause state the cause of the action in the main clause. The mood in
 -- a cum causal clause is subjunctive 
@@ -133,14 +134,14 @@ lin because_Subj = mkSubj "quod" Sub;
 -- Caesar cum loqueretur, ab inimics interfectus est.
 -- When Caesar was speaking, he was killed by his enemies. 
 
-lin why_IAdv = mkIAdv "quare";
+--lin why_IAdv = mkIAdv "quare";
 
 lin be_V     = mkVBe;
 
-lin want_VV  = mkVWant;
-lin can_VV   = mkVCan;
+--lin want_VV  = mkVWant;
+--lin can_VV   = mkVCan;
 
-lin who_IP   = mkIPWho;
+-- lin who_IP   = mkIPWho;
 
 
 

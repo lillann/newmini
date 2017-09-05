@@ -15,11 +15,11 @@ param
   
   ComplType = CVP | CS | CAdv |  CNP | CAP | None; 
   
-  NPType = NPPN PNType | NPPron | NPNoun ; 
+  NPType = NPPN PNType | NPPron | NPNoun | NPList ; 
   
 --  VPType = VT | VST | VVT ; 
   
-  VForm = VInf | Vf Number Person Tempus Mood ;  
+  VForm = VInf | VImp  | VTempus;
   Tempus = Pres | Imperf  | Perf | PluPerf ; 
   
   Tense = TPr | TPa;    
@@ -29,7 +29,7 @@ param
   NPStress     = NounFirst | AdjFirst ;    --equus magnus, magnus equus
   VPStress     = ObjFirst | VerbFirst ;    --
   
-  AdvStress = AdvFirst | AdvLast ; 
+  AdvStress = AdvFirst | AdvMid | AdvLast ; 
   
   ClauseStress = NPFirst | VPFirst ; 
   
@@ -37,7 +37,7 @@ param
   Agreement = Agr Gender Number Person ; -- | Empty ;
   
 oper
- 
+ {-
   caseVariants   = variants {Nom;Gen;Dat;Ack;Abl;Voc};
   personVariants = variants {Per1;Per2;Per3};
   genderVariants = variants {Fem;Masc;Neut};
@@ -49,16 +49,22 @@ oper
   npstressVariants     = variants {NounFirst;AdjFirst};
   vpstressVariants     = variants {ObjFirst;VerbFirst};
   clausestressVariants = variants {NPFirst;VPFirst};
+  -}
   
  SentenceStress : Type = {stress : ClauseStress; npstress : NPStress; vpstress : VPStress; advstress : AdvStress};
  ClStress       : Type = SentenceStress ** {q : Bool};
  NounPhrase     : Type = {s : Case => NPStress => Tokens; a : Agreement; typ : NPType} ;
  Sentence       : Type = {s : SentenceStress => Str};
- QSentence      : Type = {s : {stress : ClauseStress; npstress : NPStress} => Gender => Number => Str};
+ QSentence      : Type = {s : {stress : ClauseStress; npstress : NPStress; 
+                              vpstress : VPStress; advstress : AdvStress} => Gender => Number => Str};
+ 
  AdjectivePhrase : Type = {s : Case => Gender => Number => Tokens};
- CNoun : Type = {s : Case => NPStress => Number => {s : Str; firsttok : Str; rest : Str}; g : Gender};
+ CNoun : Type = {s : Case => NPStress => Number => {s : Str; firsttok : Str; rest : Str}; g : Gender; hasAdj : Bool};
  
  IPron : Type = {s : Gender => Number => Case => Str}; 
+ Subjunction  : Type =  {s : Str; m : Mood};
+   
+ IAdverb  : Type = {s : Str};
  
  VerbPhrase : Type = {            
         v     : Verb; -- {inf : Str;  imp : Number => Str; s :  Mood => Tempus => Number => Person => Str};        
@@ -74,10 +80,8 @@ oper
          s : Str -- Mood => Tempus => Number => Person => Str
        };
 
- 
- 
- 
-  Subj : Type = {s : Str; m : Mood};
+
+
 
   Noun : Type = {s : Number => Case => Str; g : Gender};
   
@@ -95,7 +99,7 @@ oper
   
   Adverb : Type = {s : Str};
   AdjA   : Type = {s : Str};
-  IAdv   : Type = {s : Str};
+ 
   
   Interjection : Type = {s : Str};
       
@@ -124,12 +128,13 @@ oper
  
   mkInterj : Str -> Interjection = \i -> {s = i};
   mkAdv : Str -> Adverb = \s -> {s = s} ;  
+  mkIAdv : Str -> IAdverb = \s -> {s = s};
  -- mkAdA : Str -> Adverb = \s -> {s = s};  
-  mkSubj : Str -> Mood -> Subj = \i,mood -> {s = i; m = mood};
+  mkSubj : Str -> Mood -> Subjunction = \i,mood -> {s = i; m = mood};
   
   mkAdjA : Str -> AdjA = \s -> {s = s};
   
-  mkIAdv : Str -> IAdv = \s -> {s = s};
+
   
   -- IP = {s : Gender => Number => Case => Str};
   --makeCaseTable : Str -> Str -> Str -> Str -> Str -> Str -> (Case => Str) = 
@@ -143,7 +148,6 @@ oper
                  <Masc,Pl> => makeCaseTable "qui" "quorum" "quibus" "quos" "quibus" nonExist;
                  <Fem,Pl>  => makeCaseTable "quae" "quarum" "quibus" "quas" "quibus" nonExist}};
                  
-
 
   mkVBe : Verb = 
       let vinfo = 

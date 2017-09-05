@@ -74,7 +74,7 @@ abstract ExtMiniGrammar = MiniGrammar
 
 -- Verb
 --+    UseV     : V   -> VP ;             -- sleep
-    ComplVV  : VV  -> VP -> VP ;       -- want to run
+    ComplVV  : VV  -> VP -> VP ;       -- want to run 
     ComplVS  : VS  -> S  -> VP ;       -- say that she runs
     SlashV2a : V2        -> VPSlash ;  -- love (it)
     ComplSlash : VPSlash -> NP -> VP ; -- love it
